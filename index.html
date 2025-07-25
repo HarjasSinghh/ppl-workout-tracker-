@@ -3,60 +3,310 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PPL Workout Tracker</title>
+    <title>FitTrack Pro - Modern Workout Tracker</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🏋️ PPL Workout Tracker</h1>
-            <div class="week-progress">
-                <span id="weekProgress">Week Progress: 0/6 days completed</span>
+    <div id="particles-js"></div>
+    
+    <div class="app-container">
+        <!-- Splash Screen -->
+        <div id="splashScreen" class="splash-screen">
+            <div class="splash-content">
+                <div class="logo-container">
+                    <i class="fas fa-dumbbell rotating"></i>
+                    <h1>FitTrack Pro</h1>
+                </div>
+                <div class="loading-bar">
+                    <div class="loading-progress"></div>
+                </div>
+                <p>Loading your fitness journey...</p>
             </div>
-        </header>
+        </div>
 
-        <nav class="day-selector">
-            <button class="day-btn active" data-day="1">Day 1 - Push</button>
-            <button class="day-btn" data-day="2">Day 2 - Pull</button>
-            <button class="day-btn" data-day="3">Day 3 - Legs</button>
-            <button class="day-btn" data-day="4">Day 4 - Push</button>
-            <button class="day-btn" data-day="5">Day 5 - Pull</button>
-            <button class="day-btn" data-day="6">Day 6 - Arms</button>
-        </nav>
+        <!-- Home Screen -->
+        <div id="homeScreen" class="home-screen" style="display: none;">
+            <nav class="top-nav">
+                <div class="nav-brand">
+                    <i class="fas fa-dumbbell"></i>
+                    <span>FitTrack Pro</span>
+                </div>
+                <div class="nav-actions">
+                    <button class="nav-btn" id="settingsBtn">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button class="nav-btn" id="profileBtn">
+                        <i class="fas fa-user"></i>
+                    </button>
+                </div>
+            </nav>
 
-        <div class="workout-container">
-            <div class="workout-header">
-                <h2 id="currentWorkout">Day 1 - Push</h2>
-                <button id="resetDay" class="reset-btn">Reset Day</button>
-            </div>
-
-            <div class="timer-section">
-                <div class="rest-timer" id="restTimer" style="display: none;">
-                    <span>Rest Time: </span>
-                    <span id="timerDisplay">00:00</span>
-                    <button id="stopTimer">Stop</button>
+            <div class="hero-section">
+                <div class="hero-content">
+                    <h1 class="hero-title">
+                        <span class="gradient-text">Transform Your</span>
+                        <span class="highlight">Fitness Journey</span>
+                    </h1>
+                    <p class="hero-subtitle">Track, analyze, and dominate your PPL routine with cutting-edge analytics</p>
+                    
+                    <div class="quick-stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalWorkouts">0</h3>
+                                <p>Total Workouts</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar-week"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="thisWeekWorkouts">0</h3>
+                                <p>This Week</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="avgWeeklyWorkouts">0.0</h3>
+                                <p>Weekly Avg</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="currentStreak">0</h3>
+                                <p>Day Streak</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div id="exerciseList" class="exercise-list">
-                <!-- Exercises will be loaded here -->
+            <div class="workout-selector-section">
+                <h2 class="section-title">
+                    <i class="fas fa-play-circle"></i>
+                    Start Your Workout
+                </h2>
+                
+                <div class="day-selector-modern">
+                    <select id="daySelector" class="modern-dropdown">
+                        <option value="">Select your workout day...</option>
+                        <option value="1">🔥 Day 1 - Push (Chest, Shoulders, Triceps)</option>
+                        <option value="2">💪 Day 2 - Pull (Back, Biceps, Traps)</option>
+                        <option value="3">🦵 Day 3 - Legs (Quads, Hamstrings, Glutes)</option>
+                        <option value="4">🔥 Day 4 - Push (Chest, Shoulders, Triceps)</option>
+                        <option value="5">💪 Day 5 - Pull (Back, Biceps, Traps)</option>
+                        <option value="6">💯 Day 6 - Arms (Biceps, Triceps, Forearms)</option>
+                    </select>
+                    
+                    <button id="startWorkout" class="cta-button" disabled>
+                        <span>Start Workout</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
             </div>
 
-            <div class="workout-notes">
-                <h3>Workout Notes</h3>
-                <textarea id="workoutNotes" placeholder="Add your notes for today's workout..."></textarea>
-                <button id="saveNotes">Save Notes</button>
+            <div class="analytics-dashboard">
+                <div class="dashboard-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-chart-bar"></i>
+                        Analytics Dashboard
+                    </h2>
+                    <button id="fullAnalytics" class="view-all-btn">
+                        View All <i class="fas fa-external-link-alt"></i>
+                    </button>
+                </div>
+                
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>📈 Weekly Progress</h3>
+                            <div class="chart-controls">
+                                <button class="chart-btn active" data-period="week">Week</button>
+                                <button class="chart-btn" data-period="month">Month</button>
+                            </div>
+                        </div>
+                        <canvas id="weeklyProgressChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>🎯 Exercise Focus</h3>
+                            <div class="legend" id="exerciseLegend"></div>
+                        </div>
+                        <canvas id="exercisePieChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>💪 Strength Progression</h3>
+                            <select class="exercise-selector" id="strengthExerciseSelect">
+                                <option value="BB Flat Bench Press">Bench Press</option>
+                                <option value="Deadlift">Deadlift</option>
+                                <option value="BB Squat">Squat</option>
+                                <option value="DB Shoulder Press">Shoulder Press</option>
+                            </select>
+                        </div>
+                        <canvas id="strengthProgressChart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="sync-status">
-            <span id="syncStatus">🔄 Ready to sync</span>
-            <button id="syncData">Sync to Google Sheets</button>
+        <!-- Workout Screen -->
+        <div id="workoutScreen" class="workout-screen" style="display: none;">
+            <div class="workout-header-modern">
+                <div class="workout-nav">
+                    <button id="backHome" class="back-btn">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div class="workout-info">
+                        <h2 id="currentWorkout">Day 1 - Push</h2>
+                        <div class="workout-meta">
+                            <span id="workoutDuration">00:00</span>
+                            <span class="separator">•</span>
+                            <span id="completedSets">0/28 sets</span>
+                        </div>
+                    </div>
+                    <div class="workout-actions">
+                        <button id="workoutTimer" class="action-btn">
+                            <i class="fas fa-stopwatch"></i>
+                        </button>
+                        <button id="workoutSettings" class="action-btn">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="progress-bar-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="workoutProgress"></div>
+                    </div>
+                    <span class="progress-text" id="progressText">0% Complete</span>
+                </div>
+            </div>
+
+            <div class="day-tabs-modern">
+                <div class="tabs-container">
+                    <button class="tab-btn active" data-day="1">
+                        <i class="fas fa-fire"></i>
+                        <span>Push</span>
+                    </button>
+                    <button class="tab-btn" data-day="2">
+                        <i class="fas fa-hand-paper"></i>
+                        <span>Pull</span>
+                    </button>
+                    <button class="tab-btn" data-day="3">
+                        <i class="fas fa-walking"></i>
+                        <span>Legs</span>
+                    </button>
+                    <button class="tab-btn" data-day="4">
+                        <i class="fas fa-fire"></i>
+                        <span>Push</span>
+                    </button>
+                    <button class="tab-btn" data-day="5">
+                        <i class="fas fa-hand-paper"></i>
+                        <span>Pull</span>
+                    </button>
+                    <button class="tab-btn" data-day="6">
+                        <i class="fas fa-fist-raised"></i>
+                        <span>Arms</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="workout-content">
+                <div class="timer-section-modern" id="restTimerSection" style="display: none;">
+                    <div class="rest-timer-card">
+                        <div class="timer-display">
+                            <div class="timer-circle">
+                                <svg class="timer-svg" viewBox="0 0 100 100">
+                                    <circle class="timer-bg" cx="50" cy="50" r="45"></circle>
+                                    <circle class="timer-progress" cx="50" cy="50" r="45" id="timerCircle"></circle>
+                                </svg>
+                                <div class="timer-text">
+                                    <span id="timerDisplay">01:30</span>
+                                    <small>Rest Time</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="timer-controls">
+                            <button id="pauseTimer" class="timer-btn">
+                                <i class="fas fa-pause"></i>
+                            </button>
+                            <button id="addTime" class="timer-btn">
+                                <i class="fas fa-plus"></i>
+                                30s
+                            </button>
+                            <button id="stopTimer" class="timer-btn">
+                                <i class="fas fa-stop"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="exerciseList" class="exercise-list-modern">
+                    <!-- Exercises will be loaded here -->
+                </div>
+
+                <div class="workout-notes-modern">
+                    <div class="notes-header">
+                        <h3>
+                            <i class="fas fa-sticky-note"></i>
+                            Workout Notes
+                        </h3>
+                        <button id="voiceNote" class="voice-btn">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                    </div>
+                    <textarea id="workoutNotes" placeholder="Add your notes, thoughts, or observations about today's workout..."></textarea>
+                    <div class="notes-actions">
+                        <button id="saveNotes" class="save-notes-btn">
+                            <i class="fas fa-save"></i>
+                            Save Notes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Modal -->
+        <div id="analyticsModal" class="modal-overlay" style="display: none;">
+            <div class="modal-content-modern">
+                <div class="modal-header">
+                    <h2>
+                        <i class="fas fa-chart-line"></i>
+                        Advanced Analytics
+                    </h2>
+                    <button id="closeAnalytics" class="close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="analytics-tabs">
+                    <button class="analytics-tab active" data-tab="overview">Overview</button>
+                    <button class="analytics-tab" data-tab="strength">Strength</button>
+                    <button class="analytics-tab" data-tab="volume">Volume</button>
+                    <button class="analytics-tab" data-tab="trends">Trends</button>
+                </div>
+                <div class="analytics-content" id="analyticsContent">
+                    <!-- Analytics content will be loaded here -->
+                </div>
+            </div>
         </div>
     </div>
 
-    <script src="https://apis.google.com/js/api.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPL Workout Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏋️ PPL Workout Tracker</h1>
+            <div class="week-progress">
+                <span id="weekProgress">Week Progress: 0/6 days completed</span>
+            </div>
+        </header>
+
+        <nav class="day-selector">
+            <button class="day-btn active" data-day="1">Day 1 - Push</button>
+            <button class="day-btn" data-day="2">Day 2 - Pull</button>
+            <button class="day-btn" data-day="3">Day 3 - Legs</button>
+            <button class="day-btn" data-day="4">Day 4 - Push</button>
+            <button class="day-btn" data-day="5">Day 5 - Pull</button>
+            <button class="day-btn" data-day="6">Day 6 - Arms</button>
+        </nav>
+
+        <div class="workout-container">
+            <div class="workout-header">
+                <h2 id="currentWorkout">Day 1 - Push</h2>
+                <button id="resetDay" class="reset-btn">Reset Day</button>
+            </div>
+
+            <div class="timer-section">
+                <div class="rest-timer" id="restTimer" style="display: none;">
+                    <span>Rest Time: </span>
+                    <span id="timerDisplay">00:00</span>
+                    <button id="stopTimer">Stop</button>
+                </div>
+            </div>
+
+            <div id="exerciseList" class="exercise-list">
+                <!-- Exercises will be loaded here -->
+            </div>
+
+            <div class="workout-notes">
+                <h3>Workout Notes</h3>
+                <textarea id="workoutNotes" placeholder="Add your notes for today's workout..."></textarea>
+                <button id="saveNotes">Save Notes</button>
+            </div>
+        </div>
+
+        <div class="sync-status">
+            <span id="syncStatus">🔄 Ready to sync</span>
+            <button id="syncData">Sync to Google Sheets</button>
+        </div>
+    </div>
+
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

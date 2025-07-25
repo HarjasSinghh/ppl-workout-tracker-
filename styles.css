@@ -1,0 +1,345 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+header {
+    background: linear-gradient(135deg, #ff6b6b, #ffd93d);
+    padding: 30px;
+    text-align: center;
+    color: white;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.week-progress {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.day-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0;
+    background: #f8f9fa;
+}
+
+.day-btn {
+    padding: 15px 20px;
+    border: none;
+    background: #f8f9fa;
+    color: #495057;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+}
+
+.day-btn:hover {
+    background: #e9ecef;
+}
+
+.day-btn.active {
+    background: #667eea;
+    color: white;
+    border-bottom-color: #5a6fd8;
+}
+
+.day-btn.completed {
+    background: #28a745;
+    color: white;
+}
+
+.workout-container {
+    padding: 30px;
+}
+
+.workout-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.workout-header h2 {
+    color: #333;
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+.reset-btn {
+    padding: 10px 20px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.3s ease;
+}
+
+.reset-btn:hover {
+    background: #c82333;
+}
+
+.timer-section {
+    margin-bottom: 20px;
+}
+
+.rest-timer {
+    background: #17a2b8;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.rest-timer button {
+    padding: 8px 15px;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.exercise-list {
+    display: grid;
+    gap: 20px;
+}
+
+.exercise-card {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 25px;
+    border-left: 5px solid #667eea;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.exercise-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+
+.exercise-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.exercise-name {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.exercise-completion {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.warm-up-badge {
+    background: #ffd93d;
+    color: #333;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-left: 10px;
+}
+
+.sets-container {
+    display: grid;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.set-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto auto;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: white;
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    transition: border-color 0.3s ease;
+}
+
+.set-row.completed {
+    border-color: #28a745;
+    background: #f8fff9;
+}
+
+.set-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.set-info {
+    font-weight: 500;
+    color: #333;
+}
+
+.weight-input, .reps-achieved {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    width: 80px;
+    text-align: center;
+}
+
+.start-timer {
+    padding: 8px 15px;
+    background: #17a2b8;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.start-timer:hover {
+    background: #138496;
+}
+
+.alternatives {
+    margin-top: 15px;
+}
+
+.alternatives select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    font-size: 0.9rem;
+}
+
+.workout-notes {
+    margin-top: 40px;
+    padding: 25px;
+    background: #f8f9fa;
+    border-radius: 15px;
+}
+
+.workout-notes h3 {
+    margin-bottom: 15px;
+    color: #333;
+    font-weight: 600;
+}
+
+.workout-notes textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-family: inherit;
+    resize: vertical;
+}
+
+#saveNotes {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.sync-status {
+    padding: 20px 30px;
+    background: #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #dee2e6;
+}
+
+#syncData {
+    padding: 10px 20px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+#syncData:hover {
+    background: #0056b3;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .container {
+        border-radius: 10px;
+    }
+    
+    header h1 {
+        font-size: 2rem;
+    }
+    
+    .day-selector {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .workout-container {
+        padding: 20px;
+    }
+    
+    .workout-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .set-row {
+        grid-template-columns: auto 1fr;
+        gap: 10px;
+    }
+    
+    .set-row .weight-input,
+    .set-row .reps-achieved,
+    .set-row .start-timer {
+        margin-top: 10px;
+    }
+}

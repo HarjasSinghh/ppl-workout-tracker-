@@ -433,8 +433,8 @@ function loadGoogleAPI() {
 
 // FIXED: Google Sheets sync function
 async function syncToGoogleSheets() {
-    if (GOOGLE_SHEETS_CONFIG.apiKey === 'YOUR_API_KEY_HERE' || 
-        GOOGLE_SHEETS_CONFIG.spreadsheetId === 'YOUR_SPREADSHEET_ID_HERE') {
+    if (GOOGLE_SHEETS_CONFIG.apiKey === 'AIzaSyBz1rmid9kIKjgUin77d5Hcf9jO8ZWkHPg' || 
+        GOOGLE_SHEETS_CONFIG.spreadsheetId === '15O-z40Jsy2PFs0XaXle07g_hJuwBCgpEi399TC9Yaic') {
         showNotification('⚠️ Please configure API key and Spreadsheet ID first');
         return;
     }

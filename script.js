@@ -3,7 +3,7 @@
 // ==========================================
 const GOOGLE_SHEETS_CONFIG = {
     apiKey: 'AIzaSyBz1rmid9kIKjgUin77d5Hcf9jO8ZWkHPg',
-    spreadsheetId: '15O-z40Jsy2PFs0XaXle07g_hJuwBCgpEi399TC9Yaic',
+    spreadsheetId: 'z40Jsy2PFs0XaXle07g_hJuwBCgpEi399TC9Yaic',
     range: 'WorkoutLog!A:H'
 };
 
@@ -34,7 +34,7 @@ function initializeApp() {
 // GOOGLE SHEETS FUNCTIONS - FIXED
 // ==========================================
 async function syncToGoogleSheets() {
-    if (GOOGLE_SHEETS_CONFIG.apiKey === 'AIzaSyBz1rmid9kIKjgUin77d5Hcf9jO8ZWkHPg' || GOOGLE_SHEETS_CONFIG.spreadsheetId === '15O-z40Jsy2PFs0XaXle07g_hJuwBCgpEi399TC9Yaic') {
+    if (GOOGLE_SHEETS_CONFIG.apiKey === 'AIzaSyBz1rmid9kIKjgUin77d5Hcf9jO8ZWkHPg' || GOOGLE_SHEETS_CONFIG.spreadsheetId === 'z40Jsy2PFs0XaXle07g_hJuwBCgpEi399TC9Yaic') {
         updateSyncStatus('⚠️ Not Configured');
         showNotification('Please configure Google Sheets API Key and Spreadsheet ID in script.js');
         return;

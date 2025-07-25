@@ -2,8 +2,9 @@
 // CONFIGURATION
 // ==========================================
 const GOOGLE_CONFIG = {
-    // PASTE YOUR NEW OAuth 2.0 CLIENT ID HERE
+    // PASTE YOUR OAuth 2.0 CLIENT ID HERE
     CLIENT_ID: '1040913543341-0vj52ims83dkcudpvh6rdtvrvr5da5nn.apps.googleusercontent.com',
+    // PASTE YOUR SPREADSHEET ID HERE
     SPREADSHEET_ID: '15O-z40Jsy2PFs0XaXle07g_hJuwBCgpEi399TC9Yaic',
     DISCOVERY_DOCS: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
     SCOPES: "https://www.googleapis.com/auth/spreadsheets",
@@ -27,58 +28,47 @@ let tokenClient;
 // ==========================================
 // INITIALIZATION
 // ==========================================
-document.addEventListener('DOMContentLoaded', initializeApp);
+document.addEventListener('DOMContentLoaded', setupEventListeners);
 
-function initializeApp() {
-    setupEventListeners();
-    showScreen('homeScreen');
+// THE FIX: These functions are called by the 'onload' attribute in the <script> tags
+function gapiLoaded() {
     gapi.load('client', initializeGapiClient);
 }
 
-// ==========================================
-// GOOGLE SHEETS API - OAUTH 2.0 VERSION
-// ==========================================
-async function initializeGapiClient() {
-  await gapi.client.init({
-    discoveryDocs: GOOGLE_CONFIG.DISCOVERY_DOCS,
-  });
-  gapiInited = true;
-  maybeEnableButtons();
+function gisLoaded() {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CONFIG.CLIENT_ID,
+        scope: GOOGLE_CONFIG.SCOPES,
+        callback: '', // Will be set once the user clicks "Authorize"
+    });
+    gisInited = true;
+    maybeEnableAuthButton();
 }
 
+async function initializeGapiClient() {
+    await gapi.client.init({
+        discoveryDocs: GOOGLE_CONFIG.DISCOVERY_DOCS,
+    });
+    gapiInited = true;
+    maybeEnableAuthButton();
+}
+
+// ==========================================
+// GOOGLE SHEETS API - OAUTH 2.0
+// ==========================================
 function handleAuthClick() {
     tokenClient.callback = async (resp) => {
         if (resp.error !== undefined) {
-          throw (resp);
+            throw (resp);
         }
         updateSigninStatus(true);
         showNotification("Authorization successful!");
     };
 
     if (gapi.client.getToken() === null) {
-        tokenClient.requestAccessToken({prompt: 'consent'});
+        tokenClient.requestAccessToken({ prompt: 'consent' });
     } else {
-        tokenClient.requestAccessToken({prompt: ''});
-    }
-}
-
-function updateSigninStatus(isSignedIn) {
-    const authBtn = document.getElementById('authorizeBtn');
-    const syncBtn = document.getElementById('syncData');
-    if (isSignedIn) {
-        authBtn.style.display = 'none';
-        syncBtn.style.display = 'flex';
-        updateSyncStatus('Ready');
-    } else {
-        authBtn.style.display = 'flex';
-        syncBtn.style.display = 'none';
-        updateSyncStatus('Authorize');
-    }
-}
-
-function maybeEnableButtons() {
-    if (gapiInited && gisInited) {
-        document.getElementById('authorizeBtn').style.visibility = 'visible';
+        tokenClient.requestAccessToken({ prompt: '' });
     }
 }
 
@@ -94,10 +84,11 @@ async function syncToGoogleSheets() {
         const dataToSync = prepareDataForSheets();
         if (dataToSync.length === 0) {
             updateSyncStatus('No Data');
+            showNotification('No new workout data to sync.');
             return;
         }
 
-        const response = await gapi.client.sheets.spreadsheets.values.append({
+        await gapi.client.sheets.spreadsheets.values.append({
             spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID,
             range: 'WorkoutLog!A1',
             valueInputOption: 'USER_ENTERED',
@@ -106,7 +97,7 @@ async function syncToGoogleSheets() {
         });
 
         updateSyncStatus('Synced!');
-        console.log('Sync successful:', response);
+        showNotification('Workout successfully synced to Google Sheets!');
     } catch (error) {
         updateSyncStatus('Error');
         console.error('Google Sheets Sync Error:', error);
@@ -147,20 +138,34 @@ function setupEventListeners() {
     document.getElementById('authorizeBtn').addEventListener('click', handleAuthClick);
     document.getElementById('syncData').addEventListener('click', syncToGoogleSheets);
     document.getElementById('saveNotes').addEventListener('click', saveWorkoutNotes);
+}
 
-    // Initialize Google Identity Services
-    tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CONFIG.CLIENT_ID,
-        scope: GOOGLE_CONFIG.SCOPES,
-        callback: '', // defined later
-    });
-    gisInited = true;
-    maybeEnableButtons();
+function updateSigninStatus(isSignedIn) {
+    const authBtn = document.getElementById('authorizeBtn');
+    const syncBtn = document.getElementById('syncData');
+    if (isSignedIn) {
+        authBtn.style.display = 'none';
+        syncBtn.style.display = 'flex';
+        updateSyncStatus('Ready');
+    } else {
+        authBtn.style.display = 'flex';
+        syncBtn.style.display = 'none';
+        updateSyncStatus('Authorize');
+    }
+}
+
+function maybeEnableAuthButton() {
+    if (gapiInited && gisInited) {
+        document.getElementById('authorizeBtn').style.visibility = 'visible';
+    }
 }
 
 function showScreen(screenId) {
     document.getElementById('homeScreen').style.display = (screenId === 'homeScreen' ? 'block' : 'none');
     document.getElementById('workoutScreen').style.display = (screenId === 'workoutScreen' ? 'block' : 'none');
+    if (screenId === 'homeScreen') {
+        updateSigninStatus(false);
+    }
 }
 
 function startWorkout(day) {

@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="httpshttps://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
@@ -25,26 +25,11 @@
             <!-- Home Screen -->
             <div id="homeScreen" class="page active">
                 <header class="page-header">
-                    <h1>Welcome Back</h1>
-                    <p>Ready to crush your next session?</p>
+                    <div>
+                        <h1>Welcome Back</h1>
+                        <p>Ready to crush your next session?</p>
+                    </div>
                 </header>
-
-                <div class="quick-info-grid">
-                    <div class="info-card">
-                        <h4>Total Workouts</h4>
-                        <p id="totalWorkoutsStat">0</p>
-                    </div>
-                    <div class="info-card">
-                        <h4>Workout Streak</h4>
-                        <p id="streakStat">0 Days</p>
-                    </div>
-                    <div class="info-card quote-card">
-                        <h4>Quote of the Day</h4>
-                        <p id="quoteOfTheDay">"The only bad workout is the one that didn't happen."</p>
-                    </div>
-                </div>
-
-                <h2>Select Today's Workout</h2>
                 <div class="workout-grid">
                     <div class="day-card" data-day="1"><i class="fas fa-fire"></i><h3>Push Day 1</h3><p>Chest, Shoulders</p></div>
                     <div class="day-card" data-day="2"><i class="fas fa-hand-rock"></i><h3>Pull Day 1</h3><p>Back, Biceps</p></div>
@@ -58,33 +43,40 @@
             <!-- Workout Screen -->
             <div id="workoutScreen" class="page">
                 <header class="page-header">
-                    <button id="backToHomeBtn" class="icon-btn"><i class="fas fa-arrow-left"></i> Back</button>
-                    <h1 id="currentWorkoutTitle"></h1>
-                    <div id="authContainer">
-                         <button id="authorizeBtn" class="primary-btn">Authorize</button>
-                         <button id="syncDataBtn" class="primary-btn" style="display: none;">Sync Data</button>
+                    <div>
+                        <button id="backToHomeBtn" class="icon-btn"><i class="fas fa-arrow-left"></i> Back to Home</button>
+                        <h1 id="currentWorkoutTitle"></h1>
+                    </div>
+                    <div id="authContainer" class="auth-container">
+                         <button id="authorizeBtn" class="primary-btn" style="visibility: hidden;">Authorize Google</button>
+                         <button id="syncDataBtn" class="primary-btn" style="display: none;">Sync Workout</button>
                     </div>
                 </header>
-                <div id="exerciseListContainer"></div>
+                <div id="exerciseListContainer" class="exercise-list-container"></div>
             </div>
 
             <!-- Dashboard Screen -->
             <div id="dashboardScreen" class="page">
                 <header class="page-header">
-                    <h1>Your Dashboard</h1>
-                    <p>Analyze your progress from your Google Sheet.</p>
+                    <div>
+                        <h1>Your Dashboard</h1>
+                        <p>Analyze your progress and get insights.</p>
+                    </div>
+                    <button id="refreshDataBtn" class="primary-btn"><i class="fas fa-sync-alt"></i> Refresh Data</button>
                 </header>
                 <div class="dashboard-controls">
-                    <select id="timeFilter" class="dropdown-filter">
-                        <option value="all">All Time</option>
-                        <option value="7">Last 7 Days</option>
-                        <option value="30">Last 30 Days</option>
-                        <option value="90">Last 90 Days</option>
+                    <select id="bodyPartFilter" class="dropdown-filter">
+                        <option value="all">All Body Parts</option>
+                        <option value="Push">Push (Chest, Shoulders, Triceps)</option>
+                        <option value="Pull">Pull (Back, Biceps)</option>
+                        <option value="Legs">Legs</option>
                     </select>
-                    <button id="refreshDataBtn" class="primary-btn"><i class="fas fa-sync-alt"></i> Refresh Data</button>
+                    <select id="exerciseFilter" class="dropdown-filter" disabled>
+                        <option value="all">All Exercises</option>
+                    </select>
                 </div>
                 <div id="dashboardContent" class="dashboard-grid">
-                    <!-- Analytics cards will be loaded here -->
+                    <!-- Analytics will be loaded here -->
                 </div>
             </div>
         </main>

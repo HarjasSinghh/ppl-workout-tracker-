@@ -23,36 +23,12 @@
 
             <main class="day-selector-slider">
                 <div class="slider-container">
-                    <div class="day-card" data-day="1">
-                        <div class="day-icon"><i class="fas fa-fire"></i></div>
-                        <h3>Push Day 1</h3>
-                        <p>Chest, Shoulders</p>
-                    </div>
-                    <div class="day-card" data-day="2">
-                        <div class="day-icon"><i class="fas fa-hand-rock"></i></div>
-                        <h3>Pull Day 1</h3>
-                        <p>Back, Biceps</p>
-                    </div>
-                    <div class="day-card" data-day="3">
-                        <div class="day-icon"><i class="fas fa-walking"></i></div>
-                        <h3>Leg Day</h3>
-                        <p>Quads, Glutes</p>
-                    </div>
-                    <div class="day-card" data-day="4">
-                        <div class="day-icon"><i class="fas fa-fire-alt"></i></div>
-                        <h3>Push Day 2</h3>
-                        <p>Intensity Focus</p>
-                    </div>
-                    <div class="day-card" data-day="5">
-                        <div class="day-icon"><i class="fas fa-hand-paper"></i></div>
-                        <h3>Pull Day 2</h3>
-                        <p>Volume Focus</p>
-                    </div>
-                    <div class="day-card" data-day="6">
-                        <div class="day-icon"><i class="fas fa-bolt"></i></div>
-                        <h3>Arms Day</h3>
-                        <p>Biceps, Triceps</p>
-                    </div>
+                    <div class="day-card" data-day="1"><div class="day-icon"><i class="fas fa-fire"></i></div><h3>Push Day 1</h3><p>Chest, Shoulders</p></div>
+                    <div class="day-card" data-day="2"><div class="day-icon"><i class="fas fa-hand-rock"></i></div><h3>Pull Day 1</h3><p>Back, Biceps</p></div>
+                    <div class="day-card" data-day="3"><div class="day-icon"><i class="fas fa-walking"></i></div><h3>Leg Day</h3><p>Quads, Glutes</p></div>
+                    <div class="day-card" data-day="4"><div class="day-icon"><i class="fas fa-fire-alt"></i></div><h3>Push Day 2</h3><p>Intensity Focus</p></div>
+                    <div class="day-card" data-day="5"><div class="day-icon"><i class="fas fa-hand-paper"></i></div><h3>Pull Day 2</h3><p>Volume Focus</p></div>
+                    <div class="day-card" data-day="6"><div class="day-icon"><i class="fas fa-bolt"></i></div><h3>Arms Day</h3><p>Biceps, Triceps</p></div>
                 </div>
             </main>
         </div>
@@ -62,20 +38,18 @@
             <header class="workout-header">
                 <button id="backHome" class="icon-btn"><i class="fas fa-arrow-left"></i></button>
                 <h2 id="currentWorkout"></h2>
-                <button id="syncData" class="sync-button">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                    <span id="syncStatus">Sync</span>
-                </button>
+                <div id="authContainer">
+                    <button id="authorizeBtn" class="sync-button">Authorize</button>
+                    <button id="syncData" class="sync-button" style="display: none;">Sync</button>
+                    <span id="syncStatus"></span>
+                </div>
             </header>
 
             <div class="workout-content">
-                <div id="exerciseList" class="exercise-list">
-                    <!-- Exercises loaded by JS -->
-                </div>
-
+                <div id="exerciseList" class="exercise-list"></div>
                 <div class="notes-card">
                     <h3><i class="fas fa-sticky-note"></i> Workout Notes</h3>
-                    <textarea id="workoutNotes" placeholder="Log your thoughts, performance, and energy levels..."></textarea>
+                    <textarea id="workoutNotes" placeholder="Log your thoughts..."></textarea>
                     <button id="saveNotes" class="save-btn">Save Notes</button>
                 </div>
             </div>
@@ -84,4 +58,3 @@
     <script src="script.js"></script>
 </body>
 </html>
-

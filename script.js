@@ -1,10 +1,9 @@
 // ==========================================
 // GOOGLE SHEETS CONFIGURATION
 // ==========================================
-// Replace these two values with your actual credentials:
 const GOOGLE_SHEETS_CONFIG = {
-    apiKey: 'AIzaSyBz1rmid9kIKjgUin77d5Hcf9jO8ZWkHPg',           // Replace with your Google Cloud API key
-    spreadsheetId: '15O-z40Jsy2PFs0XaXle07g_hJuwBCgpEi399TC9Yaic', // Replace with your Google Sheets ID
+    apiKey: 'AIzaSyBz1rmid9kIKjgUin77d5Hcf9jO8ZWkHPg',           
+    spreadsheetId: '15O-z40Jsy2PFs0XaXle07g_hJuwBCgpEi399TC9Yaic', 
     range: 'WorkoutLog!A:H'
 };
 
@@ -404,220 +403,233 @@ let workoutStartTime = null;
 let particlesLoaded = false;
 let workoutTimerInterval = null;
 let workoutElapsedSeconds = 0;
-let gapiLoaded = false;
+let chartsInitialized = false;
 
 // ==========================================
-// GOOGLE SHEETS INTEGRATION FUNCTIONS
+// INITIALIZATION
 // ==========================================
 
-// Load Google Sheets API
-function loadGoogleSheetsAPI() {
-    return new Promise((resolve, reject) => {
-        if (gapiLoaded && window.gapi && window.gapi.client) {
-            resolve();
-            return;
-        }
-        
-        if (window.gapi) {
-            initializeGapi().then(resolve).catch(reject);
-            return;
-        }
-        
-        const script = document.createElement('script');
-        script.src = 'https://apis.google.com/js/api.js';
-        script.onload = () => {
-            initializeGapi().then(resolve).catch(reject);
-        };
-        script.onerror = () => reject(new Error('Failed to load Google API'));
-        document.head.appendChild(script);
-    });
-}
-
-function initializeGapi() {
-    return new Promise((resolve, reject) => {
-        gapi.load('client', () => {
-            gapi.client.init({
-                apiKey: GOOGLE_SHEETS_CONFIG.apiKey,
-                discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4']
-            }).then(() => {
-                gapiLoaded = true;
-                resolve();
-            }).catch(reject);
-        });
-    });
-}
-
-// Sync data to Google Sheets
-async function syncToGoogleSheets() {
-    if (GOOGLE_SHEETS_CONFIG.apiKey === 'YOUR_API_KEY_HERE' || 
-        GOOGLE_SHEETS_CONFIG.spreadsheetId === 'YOUR_SPREADSHEET_ID_HERE') {
-        updateSyncStatus('⚠️ Please configure API key and Spreadsheet ID');
-        return;
-    }
-    
-    updateSyncStatus('🔄 Syncing to Google Sheets...');
-    
-    try {
-        await loadGoogleSheetsAPI();
-        
-        // Prepare data for Google Sheets
-        const rows = prepareDataForSheets();
-        
-        if (rows.length === 0) {
-            updateSyncStatus('📝 No workout data to sync');
-            return;
-        }
-        
-        // Clear existing data first
-        try {
-            await gapi.client.sheets.spreadsheets.values.clear({
-                spreadsheetId: GOOGLE_SHEETS_CONFIG.spreadsheetId,
-                range: 'WorkoutLog!A2:H1000'
-            });
-        } catch (clearError) {
-            console.log('Could not clear existing data, continuing...', clearError);
-        }
-        
-        // Add header row if sheet is empty
-        const headerRow = [
-            ['Date', 'Day', 'Exercise', 'Set', 'Weight', 'Reps', 'Completed', 'Notes']
-        ];
-        
-        try {
-            await gapi.client.sheets.spreadsheets.values.update({
-                spreadsheetId: GOOGLE_SHEETS_CONFIG.spreadsheetId,
-                range: 'WorkoutLog!A1',
-                valueInputOption: 'USER_ENTERED',
-                resource: {
-                    values: headerRow
-                }
-            });
-        } catch (headerError) {
-            console.log('Header might already exist, continuing...', headerError);
-        }
-        
-        // Add workout data
-        const response = await gapi.client.sheets.spreadsheets.values.update({
-            spreadsheetId: GOOGLE_SHEETS_CONFIG.spreadsheetId,
-            range: 'WorkoutLog!A2',
-            valueInputOption: 'USER_ENTERED',
-            resource: {
-                values: rows
-            }
-        });
-        
-        updateSyncStatus('✅ Synced successfully!');
-        console.log('Sync successful:', response);
-        showNotification('Workout data synced to Google Sheets! 📊');
-        
-    } catch (error) {
-        console.error('Sync error:', error);
-        updateSyncStatus('❌ Sync failed - Check console');
-        showNotification('Sync failed. Check your API configuration. ❌');
-    }
-}
-
-// Prepare workout data for Google Sheets format
-function prepareDataForSheets() {
-    const rows = [];
-    
-    Object.keys(workoutProgress.days).forEach(dayNumber => {
-        const dayData = workoutProgress.days[dayNumber];
-        const workoutDate = dayData.date || new Date().toISOString().split('T')[0];
-        const dayName = workoutData[dayNumber]?.name || `Day ${dayNumber}`;
-        
-        Object.keys(dayData).forEach(exerciseIndex => {
-            if (exerciseIndex === 'date') return; // Skip date field
-            
-            const exerciseData = dayData[exerciseIndex];
-            const exerciseName = workoutData[dayNumber]?.exercises[exerciseIndex]?.name || 'Unknown Exercise';
-            
-            if (exerciseData.sets) {
-                Object.keys(exerciseData.sets).forEach(setIndex => {
-                    const setData = exerciseData.sets[setIndex];
-                    
-                    rows.push([
-                        workoutDate,                           // Date
-                        dayName,                               // Day
-                        exerciseName,                          // Exercise
-                        parseInt(setIndex) + 1,                // Set number
-                        setData.weight || '',                  // Weight
-                        setData.repsAchieved || '',           // Reps
-                        setData.completed ? 'Yes' : 'No',     // Completed
-                        workoutProgress.notes[dayNumber] || '' // Notes
-                    ]);
-                });
-            }
-        });
-    });
-    
-    return rows;
-}
-
-// Load data from Google Sheets (optional feature)
-async function loadFromGoogleSheets() {
-    if (GOOGLE_SHEETS_CONFIG.apiKey === 'YOUR_API_KEY_HERE' || 
-        GOOGLE_SHEETS_CONFIG.spreadsheetId === 'YOUR_SPREADSHEET_ID_HERE') {
-        updateSyncStatus('⚠️ Please configure API key and Spreadsheet ID');
-        return;
-    }
-    
-    updateSyncStatus('📥 Loading from Google Sheets...');
-    
-    try {
-        await loadGoogleSheetsAPI();
-        
-        const response = await gapi.client.sheets.spreadsheets.values.get({
-            spreadsheetId: GOOGLE_SHEETS_CONFIG.spreadsheetId,
-            range: GOOGLE_SHEETS_CONFIG.range
-        });
-        
-        const rows = response.result.values;
-        if (rows && rows.length > 1) {
-            console.log('Loaded data from sheets:', rows);
-            updateSyncStatus('✅ Loaded from Google Sheets!');
-            showNotification('Data loaded from Google Sheets! 📥');
-        } else {
-            updateSyncStatus('📝 No data found in Google Sheets');
-        }
-        
-    } catch (error) {
-        console.error('Load error:', error);
-        updateSyncStatus('❌ Load failed - Check console');
-        showNotification('Failed to load from Google Sheets. ❌');
-    }
-}
-
-// Update sync status display
-function updateSyncStatus(message) {
-    const statusEl = document.getElementById('syncStatus');
-    if (statusEl) {
-        statusEl.textContent = message;
-        if (!message.includes('failed') && !message.includes('configure')) {
-            setTimeout(() => {
-                statusEl.textContent = '🔄 Ready to sync';
-            }, 3000);
-        }
-    }
-}
-
-// ==========================================
-// MAIN APPLICATION FUNCTIONS
-// ==========================================
-
-// Initialize the app
+// Wait for everything to load
 document.addEventListener('DOMContentLoaded', function() {
+    // Show splash screen
     showSplashScreen();
+    
+    // Initialize particles
     initializeParticles();
+    
+    // Initialize app
     initializeApp();
     
+    // Hide splash and show home after delay
     setTimeout(() => {
         hideSplashScreen();
         showHomeScreen();
+        
+        // Initialize charts after everything is loaded
+        setTimeout(() => {
+            initializeCharts();
+        }, 1000);
     }, 3000);
 });
 
-// Splash Screen Functions
+function initializeApp() {
+    if (!workoutProgress.days) {
+        workoutProgress = {
+            days: {},
+            notes: {},
+            analytics: {
+                totalWorkouts: 0,
+                weeklyWorkouts: [],
+                strengthProgress: {},
+                exerciseFrequency: {}
+            },
+            weekStartDate: new Date().toISOString().split('T')[0]
+        };
+        saveProgress();
+    }
+    
+    setupEventListeners();
+    updateHomeStats();
+}
+
+// ==========================================
+// FIXED CHARTS INITIALIZATION
+// ==========================================
+
+function initializeCharts() {
+    // Only initialize once
+    if (chartsInitialized) return;
+    
+    // Check if Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+        console.log('Chart.js not loaded yet, retrying...');
+        setTimeout(initializeCharts, 500);
+        return;
+    }
+    
+    console.log('Initializing charts...');
+    chartsInitialized = true;
+    
+    // Create all charts
+    createWeeklyProgressChart();
+    createExercisePieChart();
+    createStrengthProgressChart();
+}
+
+function createWeeklyProgressChart() {
+    const ctx = document.getElementById('weeklyProgressChart');
+    if (!ctx) {
+        console.log('Weekly chart canvas not found');
+        return;
+    }
+    
+    // Destroy existing chart
+    if (window.weeklyChart instanceof Chart) {
+        window.weeklyChart.destroy();
+    }
+    
+    const data = {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        datasets: [{
+            label: 'Workouts',
+            data: [1, 0, 1, 1, 0, 1, 0],
+            borderColor: '#4facfe',
+            backgroundColor: 'rgba(79, 172, 254, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4
+        }]
+    };
+    
+    try {
+        window.weeklyChart = new Chart(ctx, {
+            type: 'line',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+                    },
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+                    }
+                }
+            }
+        });
+        console.log('Weekly chart created successfully');
+    } catch (error) {
+        console.error('Error creating weekly chart:', error);
+    }
+}
+
+function createExercisePieChart() {
+    const ctx = document.getElementById('exercisePieChart');
+    if (!ctx) {
+        console.log('Pie chart canvas not found');
+        return;
+    }
+    
+    // Destroy existing chart
+    if (window.pieChart instanceof Chart) {
+        window.pieChart.destroy();
+    }
+    
+    const data = {
+        labels: ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'],
+        datasets: [{
+            data: [20, 25, 20, 15, 15, 5],
+            backgroundColor: [
+                '#ff6b6b', '#4ecdc4', '#45b7d1',
+                '#96ceb4', '#ffd93d', '#6c5ce7'
+            ],
+            borderWidth: 0
+        }]
+    };
+    
+    try {
+        window.pieChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+        console.log('Pie chart created successfully');
+    } catch (error) {
+        console.error('Error creating pie chart:', error);
+    }
+}
+
+function createStrengthProgressChart() {
+    const ctx = document.getElementById('strengthProgressChart');
+    if (!ctx) {
+        console.log('Strength chart canvas not found');
+        return;
+    }
+    
+    // Destroy existing chart
+    if (window.strengthChart instanceof Chart) {
+        window.strengthChart.destroy();
+    }
+    
+    const data = {
+        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+        datasets: [{
+            label: 'Weight (lbs)',
+            data: [135, 140, 145, 150],
+            borderColor: '#ffd93d',
+            backgroundColor: 'rgba(255, 217, 61, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4
+        }]
+    };
+    
+    try {
+        window.strengthChart = new Chart(ctx, {
+            type: 'line',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+                    },
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+                    }
+                }
+            }
+        });
+        console.log('Strength chart created successfully');
+    } catch (error) {
+        console.error('Error creating strength chart:', error);
+    }
+}
+
+// ==========================================
+// SPLASH SCREEN
+// ==========================================
+
 function showSplashScreen() {
     const splash = document.getElementById('splashScreen');
     if (splash) {
@@ -635,7 +647,10 @@ function hideSplashScreen() {
     }
 }
 
-// Particles Background
+// ==========================================
+// PARTICLES BACKGROUND
+// ==========================================
+
 function initializeParticles() {
     if (typeof particlesJS !== 'undefined') {
         particlesJS('particles-js', {
@@ -676,33 +691,10 @@ function initializeParticles() {
     }
 }
 
-// Initialize App
-function initializeApp() {
-    if (!workoutProgress.days) {
-        workoutProgress = {
-            days: {},
-            notes: {},
-            analytics: {
-                totalWorkouts: 0,
-                weeklyWorkouts: [],
-                strengthProgress: {},
-                exerciseFrequency: {}
-            },
-            weekStartDate: new Date().toISOString().split('T')[0]
-        };
-        saveProgress();
-    }
-    
-    setupEventListeners();
-    updateHomeStats();
-    
-    // Create charts with delay to ensure DOM is ready
-    setTimeout(() => {
-        createAnalyticsCharts();
-    }, 1000);
-}
+// ==========================================
+// EVENT LISTENERS
+// ==========================================
 
-// Event Listeners Setup
 function setupEventListeners() {
     // Day selector
     const daySelector = document.getElementById('daySelector');
@@ -772,12 +764,6 @@ function setupEventListeners() {
         saveNotesBtn.addEventListener('click', saveWorkoutNotes);
     }
     
-    // Google Sheets sync buttons
-    const syncDataBtn = document.getElementById('syncData');
-    if (syncDataBtn) {
-        syncDataBtn.addEventListener('click', syncToGoogleSheets);
-    }
-    
     // Timer control buttons
     const stopTimerBtn = document.getElementById('stopTimer');
     if (stopTimerBtn) {
@@ -795,7 +781,10 @@ function setupEventListeners() {
     }
 }
 
-// Screen Navigation Functions
+// ==========================================
+// SCREEN NAVIGATION
+// ==========================================
+
 function showHomeScreen() {
     const homeScreen = document.getElementById('homeScreen');
     const workoutScreen = document.getElementById('workoutScreen');
@@ -804,9 +793,6 @@ function showHomeScreen() {
     if (workoutScreen) workoutScreen.style.display = 'none';
     
     updateHomeStats();
-    setTimeout(() => {
-        updateAnalyticsCharts();
-    }, 500);
 }
 
 function showWorkoutScreen() {
@@ -819,7 +805,10 @@ function showWorkoutScreen() {
     updateWorkoutProgress();
 }
 
-// Home Screen Stats Functions
+// ==========================================
+// HOME STATS
+// ==========================================
+
 function updateHomeStats() {
     const totalWorkouts = Object.keys(workoutProgress.days).length;
     const thisWeek = getThisWeekWorkouts();
@@ -881,193 +870,10 @@ function getCurrentStreak() {
     return streak;
 }
 
-// Analytics Charts Functions
-function createAnalyticsCharts() {
-    setTimeout(() => {
-        createWeeklyProgressChart();
-        createExercisePieChart();
-        createStrengthProgressChart();
-    }, 500);
-}
+// ==========================================
+// WORKOUT FUNCTIONS
+// ==========================================
 
-function createWeeklyProgressChart() {
-    const ctx = document.getElementById('weeklyProgressChart');
-    if (!ctx) return;
-    
-    if (window.weeklyChart) {
-        window.weeklyChart.destroy();
-    }
-    
-    const weeklyData = generateWeeklyData();
-    
-    try {
-        window.weeklyChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: weeklyData.labels,
-                datasets: [{
-                    label: 'Workouts Completed',
-                    data: weeklyData.data,
-                    borderColor: '#4facfe',
-                    backgroundColor: 'rgba(79, 172, 254, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                        ticks: { color: 'rgba(255, 255, 255, 0.7)' }
-                    },
-                    x: {
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                        ticks: { color: 'rgba(255, 255, 255, 0.7)' }
-                    }
-                }
-            }
-        });
-    } catch (error) {
-        console.log('Chart.js not loaded yet, retrying...', error);
-        setTimeout(() => createWeeklyProgressChart(), 1000);
-    }
-}
-
-function createExercisePieChart() {
-    const ctx = document.getElementById('exercisePieChart');
-    if (!ctx) return;
-    
-    if (window.pieChart) {
-        window.pieChart.destroy();
-    }
-    
-    const exerciseData = generateExerciseDistribution();
-    
-    try {
-        window.pieChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: exerciseData.labels,
-                datasets: [{
-                    data: exerciseData.data,
-                    backgroundColor: [
-                        '#ff6b6b', '#4ecdc4', '#45b7d1',
-                        '#96ceb4', '#ffd93d', '#6c5ce7'
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                }
-            }
-        });
-    } catch (error) {
-        console.log('Chart.js not loaded yet for pie chart, retrying...', error);
-        setTimeout(() => createExercisePieChart(), 1000);
-    }
-}
-
-function createStrengthProgressChart() {
-    const ctx = document.getElementById('strengthProgressChart');
-    if (!ctx) return;
-    
-    if (window.strengthChart) {
-        window.strengthChart.destroy();
-    }
-    
-    const strengthData = generateStrengthData();
-    
-    try {
-        window.strengthChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: strengthData.labels,
-                datasets: [{
-                    label: 'Weight (lbs)',
-                    data: strengthData.data,
-                    borderColor: '#ffd93d',
-                    backgroundColor: 'rgba(255, 217, 61, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                        ticks: { color: 'rgba(255, 255, 255, 0.7)' }
-                    },
-                    x: {
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                        ticks: { color: 'rgba(255, 255, 255, 0.7)' }
-                    }
-                }
-            }
-        });
-    } catch (error) {
-        console.log('Chart.js not loaded yet for strength chart, retrying...', error);
-        setTimeout(() => createStrengthProgressChart(), 1000);
-    }
-}
-
-// Data Generation Functions
-function generateWeeklyData() {
-    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const data = [1, 0, 1, 1, 0, 1, 0];
-    
-    return { labels, data };
-}
-
-function generateExerciseDistribution() {
-    const muscleGroups = {};
-    
-    Object.values(workoutProgress.days).forEach(dayData => {
-        Object.values(dayData).forEach(exerciseData => {
-            if (exerciseData.muscleGroup) {
-                muscleGroups[exerciseData.muscleGroup] = (muscleGroups[exerciseData.muscleGroup] || 0) + 1;
-            }
-        });
-    });
-    
-    if (Object.keys(muscleGroups).length === 0) {
-        return {
-            labels: ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'],
-            data: [20, 25, 20, 15, 15, 5]
-        };
-    }
-    
-    return {
-        labels: Object.keys(muscleGroups),
-        data: Object.values(muscleGroups)
-    };
-}
-
-function generateStrengthData() {
-    return {
-        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-        data: [135, 140, 145, 150]
-    };
-}
-
-// Workout Functions
 function switchDay(day) {
     currentDay = day;
     
@@ -1262,7 +1068,10 @@ function countCompletedSets() {
     return count;
 }
 
-// Timer Functions
+// ==========================================
+// TIMER FUNCTIONS
+// ==========================================
+
 function startWorkoutTimer() {
     workoutStartTime = Date.now();
     workoutElapsedSeconds = 0;
@@ -1358,7 +1167,10 @@ function addRestTime(seconds) {
     timerSeconds += seconds;
 }
 
-// Utility Functions
+// ==========================================
+// UTILITY FUNCTIONS
+// ==========================================
+
 function saveProgress() {
     localStorage.setItem('workoutProgress', JSON.stringify(workoutProgress));
 }
@@ -1427,12 +1239,6 @@ function hideAnalyticsModal() {
     if (modal) {
         modal.style.display = 'none';
     }
-}
-
-function updateAnalyticsCharts() {
-    setTimeout(() => {
-        createAnalyticsCharts();
-    }, 100);
 }
 
 // Add notification CSS

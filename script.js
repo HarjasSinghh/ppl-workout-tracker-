@@ -1,5 +1,6 @@
 // ==========================================
 // CONFIGURATION
+// Forcing a final redeploy to clear cache
 // ==========================================
 const GOOGLE_SHEETS_CONFIG = {
     apiKey: 'AIzaSyBz1rmid9kIKjgUin77d5Hcf9jO8ZWkHPg',

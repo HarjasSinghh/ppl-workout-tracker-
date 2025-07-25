@@ -1,3 +1,13 @@
+// ==========================================
+// GOOGLE SHEETS CONFIGURATION
+// ==========================================
+// Replace these two values with your actual credentials:
+const GOOGLE_SHEETS_CONFIG = {
+    apiKey: 'AIzaSyBz1rmid9kIKjgUin77d5Hcf9jO8ZWkHPg',           // Replace with your Google Cloud API key
+    spreadsheetId: '15O-z40Jsy2PFs0XaXle07g_hJuwBCgpEi399TC9Yaic', // Replace with your Google Sheets ID
+    range: 'WorkoutLog!A:H'
+};
+
 // Enhanced workout data with traps and forearms
 const workoutData = {
     1: { // Day 1 - Push
@@ -394,6 +404,206 @@ let workoutStartTime = null;
 let particlesLoaded = false;
 let workoutTimerInterval = null;
 let workoutElapsedSeconds = 0;
+let gapiLoaded = false;
+
+// ==========================================
+// GOOGLE SHEETS INTEGRATION FUNCTIONS
+// ==========================================
+
+// Load Google Sheets API
+function loadGoogleSheetsAPI() {
+    return new Promise((resolve, reject) => {
+        if (gapiLoaded && window.gapi && window.gapi.client) {
+            resolve();
+            return;
+        }
+        
+        if (window.gapi) {
+            initializeGapi().then(resolve).catch(reject);
+            return;
+        }
+        
+        const script = document.createElement('script');
+        script.src = 'https://apis.google.com/js/api.js';
+        script.onload = () => {
+            initializeGapi().then(resolve).catch(reject);
+        };
+        script.onerror = () => reject(new Error('Failed to load Google API'));
+        document.head.appendChild(script);
+    });
+}
+
+function initializeGapi() {
+    return new Promise((resolve, reject) => {
+        gapi.load('client', () => {
+            gapi.client.init({
+                apiKey: GOOGLE_SHEETS_CONFIG.apiKey,
+                discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4']
+            }).then(() => {
+                gapiLoaded = true;
+                resolve();
+            }).catch(reject);
+        });
+    });
+}
+
+// Sync data to Google Sheets
+async function syncToGoogleSheets() {
+    if (GOOGLE_SHEETS_CONFIG.apiKey === 'YOUR_API_KEY_HERE' || 
+        GOOGLE_SHEETS_CONFIG.spreadsheetId === 'YOUR_SPREADSHEET_ID_HERE') {
+        updateSyncStatus('⚠️ Please configure API key and Spreadsheet ID');
+        return;
+    }
+    
+    updateSyncStatus('🔄 Syncing to Google Sheets...');
+    
+    try {
+        await loadGoogleSheetsAPI();
+        
+        // Prepare data for Google Sheets
+        const rows = prepareDataForSheets();
+        
+        if (rows.length === 0) {
+            updateSyncStatus('📝 No workout data to sync');
+            return;
+        }
+        
+        // Clear existing data first
+        try {
+            await gapi.client.sheets.spreadsheets.values.clear({
+                spreadsheetId: GOOGLE_SHEETS_CONFIG.spreadsheetId,
+                range: 'WorkoutLog!A2:H1000'
+            });
+        } catch (clearError) {
+            console.log('Could not clear existing data, continuing...', clearError);
+        }
+        
+        // Add header row if sheet is empty
+        const headerRow = [
+            ['Date', 'Day', 'Exercise', 'Set', 'Weight', 'Reps', 'Completed', 'Notes']
+        ];
+        
+        try {
+            await gapi.client.sheets.spreadsheets.values.update({
+                spreadsheetId: GOOGLE_SHEETS_CONFIG.spreadsheetId,
+                range: 'WorkoutLog!A1',
+                valueInputOption: 'USER_ENTERED',
+                resource: {
+                    values: headerRow
+                }
+            });
+        } catch (headerError) {
+            console.log('Header might already exist, continuing...', headerError);
+        }
+        
+        // Add workout data
+        const response = await gapi.client.sheets.spreadsheets.values.update({
+            spreadsheetId: GOOGLE_SHEETS_CONFIG.spreadsheetId,
+            range: 'WorkoutLog!A2',
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+                values: rows
+            }
+        });
+        
+        updateSyncStatus('✅ Synced successfully!');
+        console.log('Sync successful:', response);
+        showNotification('Workout data synced to Google Sheets! 📊');
+        
+    } catch (error) {
+        console.error('Sync error:', error);
+        updateSyncStatus('❌ Sync failed - Check console');
+        showNotification('Sync failed. Check your API configuration. ❌');
+    }
+}
+
+// Prepare workout data for Google Sheets format
+function prepareDataForSheets() {
+    const rows = [];
+    
+    Object.keys(workoutProgress.days).forEach(dayNumber => {
+        const dayData = workoutProgress.days[dayNumber];
+        const workoutDate = dayData.date || new Date().toISOString().split('T')[0];
+        const dayName = workoutData[dayNumber]?.name || `Day ${dayNumber}`;
+        
+        Object.keys(dayData).forEach(exerciseIndex => {
+            if (exerciseIndex === 'date') return; // Skip date field
+            
+            const exerciseData = dayData[exerciseIndex];
+            const exerciseName = workoutData[dayNumber]?.exercises[exerciseIndex]?.name || 'Unknown Exercise';
+            
+            if (exerciseData.sets) {
+                Object.keys(exerciseData.sets).forEach(setIndex => {
+                    const setData = exerciseData.sets[setIndex];
+                    
+                    rows.push([
+                        workoutDate,                           // Date
+                        dayName,                               // Day
+                        exerciseName,                          // Exercise
+                        parseInt(setIndex) + 1,                // Set number
+                        setData.weight || '',                  // Weight
+                        setData.repsAchieved || '',           // Reps
+                        setData.completed ? 'Yes' : 'No',     // Completed
+                        workoutProgress.notes[dayNumber] || '' // Notes
+                    ]);
+                });
+            }
+        });
+    });
+    
+    return rows;
+}
+
+// Load data from Google Sheets (optional feature)
+async function loadFromGoogleSheets() {
+    if (GOOGLE_SHEETS_CONFIG.apiKey === 'YOUR_API_KEY_HERE' || 
+        GOOGLE_SHEETS_CONFIG.spreadsheetId === 'YOUR_SPREADSHEET_ID_HERE') {
+        updateSyncStatus('⚠️ Please configure API key and Spreadsheet ID');
+        return;
+    }
+    
+    updateSyncStatus('📥 Loading from Google Sheets...');
+    
+    try {
+        await loadGoogleSheetsAPI();
+        
+        const response = await gapi.client.sheets.spreadsheets.values.get({
+            spreadsheetId: GOOGLE_SHEETS_CONFIG.spreadsheetId,
+            range: GOOGLE_SHEETS_CONFIG.range
+        });
+        
+        const rows = response.result.values;
+        if (rows && rows.length > 1) {
+            console.log('Loaded data from sheets:', rows);
+            updateSyncStatus('✅ Loaded from Google Sheets!');
+            showNotification('Data loaded from Google Sheets! 📥');
+        } else {
+            updateSyncStatus('📝 No data found in Google Sheets');
+        }
+        
+    } catch (error) {
+        console.error('Load error:', error);
+        updateSyncStatus('❌ Load failed - Check console');
+        showNotification('Failed to load from Google Sheets. ❌');
+    }
+}
+
+// Update sync status display
+function updateSyncStatus(message) {
+    const statusEl = document.getElementById('syncStatus');
+    if (statusEl) {
+        statusEl.textContent = message;
+        if (!message.includes('failed') && !message.includes('configure')) {
+            setTimeout(() => {
+                statusEl.textContent = '🔄 Ready to sync';
+            }, 3000);
+        }
+    }
+}
+
+// ==========================================
+// MAIN APPLICATION FUNCTIONS
+// ==========================================
 
 // Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
@@ -534,7 +744,7 @@ function setupEventListeners() {
         });
     }
     
-    // Day tabs in workout screen - Fixed event listeners
+    // Day tabs in workout screen
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -560,6 +770,12 @@ function setupEventListeners() {
     const saveNotesBtn = document.getElementById('saveNotes');
     if (saveNotesBtn) {
         saveNotesBtn.addEventListener('click', saveWorkoutNotes);
+    }
+    
+    // Google Sheets sync buttons
+    const syncDataBtn = document.getElementById('syncData');
+    if (syncDataBtn) {
+        syncDataBtn.addEventListener('click', syncToGoogleSheets);
     }
     
     // Timer control buttons
@@ -665,7 +881,7 @@ function getCurrentStreak() {
     return streak;
 }
 
-// Fixed Analytics Charts Functions
+// Analytics Charts Functions
 function createAnalyticsCharts() {
     setTimeout(() => {
         createWeeklyProgressChart();
@@ -678,7 +894,6 @@ function createWeeklyProgressChart() {
     const ctx = document.getElementById('weeklyProgressChart');
     if (!ctx) return;
     
-    // Destroy existing chart if it exists
     if (window.weeklyChart) {
         window.weeklyChart.destroy();
     }
@@ -729,7 +944,6 @@ function createExercisePieChart() {
     const ctx = document.getElementById('exercisePieChart');
     if (!ctx) return;
     
-    // Destroy existing chart if it exists
     if (window.pieChart) {
         window.pieChart.destroy();
     }
@@ -768,7 +982,6 @@ function createStrengthProgressChart() {
     const ctx = document.getElementById('strengthProgressChart');
     if (!ctx) return;
     
-    // Destroy existing chart if it exists
     if (window.strengthChart) {
         window.strengthChart.destroy();
     }
@@ -818,7 +1031,7 @@ function createStrengthProgressChart() {
 // Data Generation Functions
 function generateWeeklyData() {
     const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const data = [1, 0, 1, 1, 0, 1, 0]; // Sample data
+    const data = [1, 0, 1, 1, 0, 1, 0];
     
     return { labels, data };
 }
@@ -826,7 +1039,6 @@ function generateWeeklyData() {
 function generateExerciseDistribution() {
     const muscleGroups = {};
     
-    // Count exercises from completed workouts
     Object.values(workoutProgress.days).forEach(dayData => {
         Object.values(dayData).forEach(exerciseData => {
             if (exerciseData.muscleGroup) {
@@ -835,7 +1047,6 @@ function generateExerciseDistribution() {
         });
     });
     
-    // Default data if no workouts completed
     if (Object.keys(muscleGroups).length === 0) {
         return {
             labels: ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'],
@@ -860,7 +1071,6 @@ function generateStrengthData() {
 function switchDay(day) {
     currentDay = day;
     
-    // Update active tab
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
     });
@@ -912,7 +1122,6 @@ function loadWorkout(day) {
                 <div class="sets-grid-modern">
         `;
         
-        // Generate sets
         for (let setIndex = 0; setIndex < exercise.sets; setIndex++) {
             const setProgress = exerciseProgress.sets?.[setIndex] || {};
             const isCompleted = setProgress.completed || false;
@@ -956,7 +1165,6 @@ function loadWorkout(day) {
 }
 
 function addWorkoutEventListeners() {
-    // Checkbox listeners
     document.querySelectorAll('.set-checkbox-modern').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             const row = this.closest('.set-row-modern');
@@ -980,7 +1188,6 @@ function addWorkoutEventListeners() {
         });
     });
     
-    // Input listeners
     document.querySelectorAll('.input-modern').forEach(input => {
         input.addEventListener('blur', function() {
             const row = this.closest('.set-row-modern');
@@ -1081,7 +1288,7 @@ function stopWorkoutTimer() {
 }
 
 function startRestTimer(seconds = 90) {
-    stopRestTimer(); // Stop any existing timer
+    stopRestTimer();
     
     timerSeconds = seconds;
     const timerSection = document.getElementById('restTimerSection');
@@ -1093,7 +1300,7 @@ function startRestTimer(seconds = 90) {
     }
     
     const totalSeconds = seconds;
-    const circumference = 2 * Math.PI * 45; // radius = 45
+    const circumference = 2 * Math.PI * 45;
     
     timerInterval = setInterval(() => {
         const minutes = Math.floor(timerSeconds / 60);
@@ -1103,7 +1310,6 @@ function startRestTimer(seconds = 90) {
             displayElement.textContent = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
         }
         
-        // Update circle progress
         if (circleElement) {
             const progress = (totalSeconds - timerSeconds) / totalSeconds;
             const strokeDashoffset = circumference - (progress * circumference);

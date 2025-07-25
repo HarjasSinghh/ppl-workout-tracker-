@@ -1,9 +1,12 @@
 // ==========================================
 // CONFIGURATION
 // ==========================================
-const GOOGLE_SHEETS_CONFIG = {
-    apiKey: 'AIzaSyDs3gMxEUO0aLHnC7Ctwiaf1r3hOrmz0dY',
-    spreadsheetId: '15O-z40Jsy2PFs0XaXle07g_hJuwBCgpEi399TC9Yaic',
+const GOOGLE_CONFIG = {
+    // PASTE YOUR NEW OAuth 2.0 CLIENT ID HERE
+    CLIENT_ID: '1040913543341-0vj52ims83dkcudpvh6rdtvrvr5da5nn.apps.googleusercontent.com',
+    SPREADSHEET_ID: '15O-z40Jsy2PFs0XaXle07g_hJuwBCgpEi399TC9Yaic',
+    DISCOVERY_DOCS: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
+    SCOPES: "https://www.googleapis.com/auth/spreadsheets",
 };
 
 const workoutData = {
@@ -17,7 +20,9 @@ const workoutData = {
 
 let currentDay = 1;
 let workoutProgress = JSON.parse(localStorage.getItem('workoutProgress')) || {};
-let gapiInitialized = false;
+let gapiInited = false;
+let gisInited = false;
+let tokenClient;
 
 // ==========================================
 // INITIALIZATION
@@ -27,61 +32,83 @@ document.addEventListener('DOMContentLoaded', initializeApp);
 function initializeApp() {
     setupEventListeners();
     showScreen('homeScreen');
+    gapi.load('client', initializeGapiClient);
 }
 
 // ==========================================
-// GOOGLE SHEETS API - ROBUST VERSION
+// GOOGLE SHEETS API - OAUTH 2.0 VERSION
 // ==========================================
-function loadGapiClient() {
-    return new Promise((resolve, reject) => {
-        if (gapiInitialized) {
-            resolve();
-            return;
+async function initializeGapiClient() {
+  await gapi.client.init({
+    discoveryDocs: GOOGLE_CONFIG.DISCOVERY_DOCS,
+  });
+  gapiInited = true;
+  maybeEnableButtons();
+}
+
+function handleAuthClick() {
+    tokenClient.callback = async (resp) => {
+        if (resp.error !== undefined) {
+          throw (resp);
         }
-        gapi.load('client', () => {
-            gapi.client.init({
-                apiKey: GOOGLE_SHEETS_CONFIG.apiKey,
-                discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
-            }).then(() => {
-                gapiInitialized = true;
-                resolve();
-            }).catch(reject);
-        });
-    });
+        updateSigninStatus(true);
+        showNotification("Authorization successful!");
+    };
+
+    if (gapi.client.getToken() === null) {
+        tokenClient.requestAccessToken({prompt: 'consent'});
+    } else {
+        tokenClient.requestAccessToken({prompt: ''});
+    }
+}
+
+function updateSigninStatus(isSignedIn) {
+    const authBtn = document.getElementById('authorizeBtn');
+    const syncBtn = document.getElementById('syncData');
+    if (isSignedIn) {
+        authBtn.style.display = 'none';
+        syncBtn.style.display = 'flex';
+        updateSyncStatus('Ready');
+    } else {
+        authBtn.style.display = 'flex';
+        syncBtn.style.display = 'none';
+        updateSyncStatus('Authorize');
+    }
+}
+
+function maybeEnableButtons() {
+    if (gapiInited && gisInited) {
+        document.getElementById('authorizeBtn').style.visibility = 'visible';
+    }
 }
 
 async function syncToGoogleSheets() {
-    if (!GOOGLE_SHEETS_CONFIG.apiKey || GOOGLE_SHEETS_CONFIG.apiKey === 'YOUR_API_KEY_HERE') {
-        updateSyncStatus('Not Configured');
-        showNotification('Error: API Key is not configured in script.js');
+    if (!gapi.client.getToken()) {
+        showNotification("Please authorize first.");
+        handleAuthClick();
         return;
     }
 
     updateSyncStatus('Syncing...');
     try {
-        await loadGapiClient();
         const dataToSync = prepareDataForSheets();
-
         if (dataToSync.length === 0) {
             updateSyncStatus('No Data');
-            showNotification('No new workout data to sync.');
             return;
         }
 
         const response = await gapi.client.sheets.spreadsheets.values.append({
-            spreadsheetId: GOOGLE_SHEETS_CONFIG.spreadsheetId,
+            spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID,
             range: 'WorkoutLog!A1',
             valueInputOption: 'USER_ENTERED',
             insertDataOption: 'INSERT_ROWS',
             resource: { values: dataToSync },
         });
 
-        updateSyncStatus('Synced');
-        showNotification('Workout successfully synced to Google Sheets!');
+        updateSyncStatus('Synced!');
         console.log('Sync successful:', response);
     } catch (error) {
         updateSyncStatus('Error');
-        showNotification('Sync Failed. Check the browser console for details.');
         console.error('Google Sheets Sync Error:', error);
     }
 }
@@ -101,12 +128,8 @@ function prepareDataForSheets() {
             const setData = exerciseData.sets[setIndex];
             if (setData.completed) {
                 rows.push([
-                    workoutDate,
-                    dayName,
-                    exerciseName,
-                    parseInt(setIndex) + 1,
-                    setData.weight || '0',
-                    setData.reps || '0',
+                    workoutDate, dayName, exerciseName, parseInt(setIndex) + 1,
+                    setData.weight || '0', setData.reps || '0',
                     workoutProgress.notes?.[currentDay] || ''
                 ]);
             }
@@ -116,21 +139,25 @@ function prepareDataForSheets() {
 }
 
 // ==========================================
-// EVENT LISTENERS
+// EVENT LISTENERS & UI
 // ==========================================
 function setupEventListeners() {
-    document.querySelectorAll('.day-card').forEach(card => {
-        card.addEventListener('click', () => startWorkout(card.dataset.day));
-    });
-
+    document.querySelectorAll('.day-card').forEach(card => card.addEventListener('click', () => startWorkout(card.dataset.day)));
     document.getElementById('backHome').addEventListener('click', () => showScreen('homeScreen'));
+    document.getElementById('authorizeBtn').addEventListener('click', handleAuthClick);
     document.getElementById('syncData').addEventListener('click', syncToGoogleSheets);
     document.getElementById('saveNotes').addEventListener('click', saveWorkoutNotes);
+
+    // Initialize Google Identity Services
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CONFIG.CLIENT_ID,
+        scope: GOOGLE_CONFIG.SCOPES,
+        callback: '', // defined later
+    });
+    gisInited = true;
+    maybeEnableButtons();
 }
 
-// ==========================================
-// UI & SCREEN MANAGEMENT
-// ==========================================
 function showScreen(screenId) {
     document.getElementById('homeScreen').style.display = (screenId === 'homeScreen' ? 'block' : 'none');
     document.getElementById('workoutScreen').style.display = (screenId === 'workoutScreen' ? 'block' : 'none');
@@ -142,52 +169,26 @@ function startWorkout(day) {
     showScreen('workoutScreen');
 }
 
-// ==========================================
-// WORKOUT LOGIC
-// ==========================================
 function loadWorkout(day) {
     const workout = workoutData[day];
-    if (!workout) return;
-
     document.getElementById('currentWorkout').textContent = workout.name;
     const exerciseList = document.getElementById('exerciseList');
     exerciseList.innerHTML = '';
-
-    workout.exercises.forEach((exercise, exerciseIndex) => {
+    workout.exercises.forEach((exercise, i) => {
         const card = document.createElement('div');
         card.className = 'exercise-card';
-
         let setsHtml = '';
-        for (let i = 0; i < exercise.sets; i++) {
-            const setData = workoutProgress[day]?.[exerciseIndex]?.sets?.[i] || {};
-            setsHtml += `
-                <div class="set-row ${setData.completed ? 'completed' : ''}" data-exercise="${exerciseIndex}" data-set="${i}">
-                    <div class="custom-checkbox ${setData.completed ? 'checked' : ''}">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <span class="set-label">Set ${i + 1}</span>
-                    <input type="number" class="set-input" placeholder="kg" value="${setData.weight || ''}">
-                    <input type="number" class="set-input" placeholder="reps" value="${setData.reps || ''}">
-                </div>
-            `;
+        for (let j = 0; j < exercise.sets; j++) {
+            const d = workoutProgress[day]?.[i]?.sets?.[j] || {};
+            setsHtml += `<div class="set-row ${d.completed ? 'completed' : ''}" data-exercise="${i}" data-set="${j}"><div class="custom-checkbox ${d.completed ? 'checked' : ''}"><i class="fas fa-check"></i></div><span class="set-label">Set ${j + 1}</span><input type="number" class="set-input" placeholder="kg" value="${d.weight || ''}"><input type="number" class="set-input" placeholder="reps" value="${d.reps || ''}"></div>`;
         }
-
         card.innerHTML = `<h2 class="exercise-name">${exercise.name}</h2><div class="sets-container">${setsHtml}</div>`;
         exerciseList.appendChild(card);
     });
-
     document.querySelectorAll('.set-row').forEach(row => {
-        row.addEventListener('click', (e) => {
-            if (e.target.classList.contains('set-input')) return;
-            const checkbox = row.querySelector('.custom-checkbox');
-            checkbox.classList.toggle('checked');
-            handleSetChange({ target: checkbox });
-        });
-        row.querySelectorAll('.set-input').forEach(input => {
-            input.addEventListener('change', handleSetChange);
-        });
+        row.addEventListener('click', e => { if (!e.target.classList.contains('set-input')) { row.querySelector('.custom-checkbox').classList.toggle('checked'); handleSetChange({ target: row.querySelector('.custom-checkbox') }); } });
+        row.querySelectorAll('.set-input').forEach(input => input.addEventListener('change', handleSetChange));
     });
-
     document.getElementById('workoutNotes').value = workoutProgress.notes?.[day] || '';
 }
 
@@ -195,16 +196,9 @@ function handleSetChange(e) {
     const row = e.target.closest('.set-row');
     const { exercise, set } = row.dataset;
     const isChecked = row.querySelector('.custom-checkbox').classList.contains('checked');
-
     if (!workoutProgress[currentDay]) workoutProgress[currentDay] = {};
     if (!workoutProgress[currentDay][exercise]) workoutProgress[currentDay][exercise] = { sets: {} };
-
-    workoutProgress[currentDay][exercise].sets[set] = {
-        completed: isChecked,
-        weight: row.querySelector('input[placeholder="kg"]').value,
-        reps: row.querySelector('input[placeholder="reps"]').value,
-    };
-    
+    workoutProgress[currentDay][exercise].sets[set] = { completed: isChecked, weight: row.querySelector('input[placeholder="kg"]').value, reps: row.querySelector('input[placeholder="reps"]').value };
     row.classList.toggle('completed', isChecked);
     saveProgress();
 }
@@ -220,30 +214,15 @@ function saveProgress() {
     localStorage.setItem('workoutProgress', JSON.stringify(workoutProgress));
 }
 
-// ==========================================
-// UTILITIES
-// ==========================================
 function updateSyncStatus(status) {
     document.getElementById('syncStatus').textContent = status;
 }
 
 function showNotification(message) {
     const notification = document.createElement('div');
-    notification.className = 'notification';
     notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-        background-color: var(--text-primary); color: white; padding: 12px 24px;
-        border-radius: 8px; box-shadow: var(--shadow-md); z-index: 1001;
-        opacity: 0; transition: opacity 0.3s, transform 0.3s;
-    `;
+    notification.style.cssText = `position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #1f1f1f; color: white; padding: 12px 24px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1001; opacity: 0; transition: all 0.3s;`;
     document.body.appendChild(notification);
-    setTimeout(() => {
-        notification.style.opacity = '1';
-        notification.style.transform = 'translateX(-50%) translateY(-10px)';
-    }, 10);
-    setTimeout(() => {
-        notification.style.opacity = '0';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
+    setTimeout(() => { notification.style.opacity = '1'; notification.style.transform = 'translateX(-50%) translateY(-10px)'; }, 10);
+    setTimeout(() => { notification.style.opacity = '0'; setTimeout(() => notification.remove(), 300); }, 3000);
 }

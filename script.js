@@ -7,7 +7,7 @@ const GOOGLE_SHEETS_CONFIG = {
     range: 'WorkoutLog!A:H'
 };
 
-// Enhanced workout data with traps and forearms
+// Enhanced workout data
 const workoutData = {
     1: { // Day 1 - Push
         name: "Day 1 - Push",
@@ -400,34 +400,163 @@ let timerInterval = null;
 let timerSeconds = 0;
 let workoutProgress = JSON.parse(localStorage.getItem('workoutProgress')) || {};
 let workoutStartTime = null;
-let particlesLoaded = false;
 let workoutTimerInterval = null;
 let workoutElapsedSeconds = 0;
 let chartsInitialized = false;
 
 // ==========================================
-// INITIALIZATION
+// GOOGLE SHEETS INTEGRATION - FIXED
 // ==========================================
 
-// Wait for everything to load
+// Load Google API
+function loadGoogleAPI() {
+    return new Promise((resolve, reject) => {
+        if (window.gapi) {
+            resolve();
+            return;
+        }
+        
+        const script = document.createElement('script');
+        script.src = 'https://apis.google.com/js/api.js';
+        script.onload = () => {
+            gapi.load('client', () => {
+                gapi.client.init({
+                    apiKey: GOOGLE_SHEETS_CONFIG.apiKey,
+                    discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4']
+                }).then(resolve).catch(reject);
+            });
+        };
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+}
+
+// FIXED: Google Sheets sync function
+async function syncToGoogleSheets() {
+    if (GOOGLE_SHEETS_CONFIG.apiKey === 'YOUR_API_KEY_HERE' || 
+        GOOGLE_SHEETS_CONFIG.spreadsheetId === 'YOUR_SPREADSHEET_ID_HERE') {
+        showNotification('⚠️ Please configure API key and Spreadsheet ID first');
+        return;
+    }
+    
+    updateSyncStatus('🔄 Syncing to Google Sheets...');
+    
+    try {
+        await loadGoogleAPI();
+        
+        // Prepare data
+        const rows = prepareWorkoutDataForSheets();
+        
+        if (rows.length === 0) {
+            updateSyncStatus('📝 No workout data to sync');
+            return;
+        }
+        
+        console.log('Syncing data:', rows);
+        
+        // Clear existing data
+        await gapi.client.sheets.spreadsheets.values.clear({
+            spreadsheetId: GOOGLE_SHEETS_CONFIG.spreadsheetId,
+            range: 'WorkoutLog!A2:H1000'
+        });
+        
+        // Add headers
+        await gapi.client.sheets.spreadsheets.values.update({
+            spreadsheetId: GOOGLE_SHEETS_CONFIG.spreadsheetId,
+            range: 'WorkoutLog!A1:H1',
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+                values: [['Date', 'Day', 'Exercise', 'Set', 'Weight', 'Reps', 'Completed', 'Notes']]
+            }
+        });
+        
+        // Add workout data
+        const response = await gapi.client.sheets.spreadsheets.values.update({
+            spreadsheetId: GOOGLE_SHEETS_CONFIG.spreadsheetId,
+            range: 'WorkoutLog!A2',
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+                values: rows
+            }
+        });
+        
+        updateSyncStatus('✅ Synced successfully!');
+        showNotification('Workout data synced to Google Sheets! 📊');
+        console.log('Sync successful:', response);
+        
+    } catch (error) {
+        console.error('Sync error:', error);
+        updateSyncStatus('❌ Sync failed - Check console');
+        showNotification(`Sync failed: ${error.message}`);
+    }
+}
+
+// FIXED: Prepare data for Google Sheets
+function prepareWorkoutDataForSheets() {
+    const rows = [];
+    
+    Object.keys(workoutProgress.days).forEach(dayNumber => {
+        const dayData = workoutProgress.days[dayNumber];
+        const workoutDate = dayData.date ? dayData.date.split('T')[0] : new Date().toISOString().split('T')[0];
+        const dayName = workoutData[dayNumber]?.name || `Day ${dayNumber}`;
+        
+        Object.keys(dayData).forEach(exerciseIndex => {
+            if (exerciseIndex === 'date') return;
+            
+            const exerciseData = dayData[exerciseIndex];
+            const exerciseName = workoutData[dayNumber]?.exercises[exerciseIndex]?.name || 'Unknown Exercise';
+            
+            if (exerciseData && exerciseData.sets) {
+                Object.keys(exerciseData.sets).forEach(setIndex => {
+                    const setData = exerciseData.sets[setIndex];
+                    
+                    rows.push([
+                        workoutDate,
+                        dayName,
+                        exerciseName,
+                        parseInt(setIndex) + 1,
+                        setData.weight || '',
+                        setData.repsAchieved || '',
+                        setData.completed ? 'Yes' : 'No',
+                        workoutProgress.notes[dayNumber] || ''
+                    ]);
+                });
+            }
+        });
+    });
+    
+    return rows;
+}
+
+function updateSyncStatus(message) {
+    const statusEl = document.getElementById('syncStatus');
+    if (statusEl) {
+        statusEl.textContent = message;
+        setTimeout(() => {
+            if (!message.includes('failed') && !message.includes('configure')) {
+                statusEl.textContent = '🔄 Ready to sync';
+            }
+        }, 3000);
+    }
+}
+
+// ==========================================
+// INITIALIZATION - FIXED
+// ==========================================
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Show splash screen
     showSplashScreen();
-    
-    // Initialize particles
-    initializeParticles();
-    
-    // Initialize app
     initializeApp();
     
-    // Hide splash and show home after delay
     setTimeout(() => {
         hideSplashScreen();
         showHomeScreen();
         
-        // Initialize charts after everything is loaded
+        // FIXED: Initialize charts only once
         setTimeout(() => {
-            initializeCharts();
+            if (!chartsInitialized) {
+                initializeChartsOnce();
+            }
         }, 1000);
     }, 3000);
 });
@@ -452,243 +581,129 @@ function initializeApp() {
     updateHomeStats();
 }
 
-// ==========================================
-// FIXED CHARTS INITIALIZATION
-// ==========================================
-
-function initializeCharts() {
-    // Only initialize once
+// FIXED: Charts initialization
+function initializeChartsOnce() {
     if (chartsInitialized) return;
     
-    // Check if Chart.js is loaded
     if (typeof Chart === 'undefined') {
-        console.log('Chart.js not loaded yet, retrying...');
-        setTimeout(initializeCharts, 500);
+        console.log('Chart.js not loaded, skipping charts');
         return;
     }
     
-    console.log('Initializing charts...');
     chartsInitialized = true;
+    console.log('Initializing charts once...');
     
-    // Create all charts
-    createWeeklyProgressChart();
-    createExercisePieChart();
-    createStrengthProgressChart();
+    createWeeklyChart();
+    createPieChart();
+    createStrengthChart();
 }
 
-function createWeeklyProgressChart() {
+function createWeeklyChart() {
     const ctx = document.getElementById('weeklyProgressChart');
-    if (!ctx) {
-        console.log('Weekly chart canvas not found');
-        return;
-    }
+    if (!ctx) return;
     
-    // Destroy existing chart
-    if (window.weeklyChart instanceof Chart) {
+    if (window.weeklyChart) {
         window.weeklyChart.destroy();
     }
     
-    const data = {
-        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        datasets: [{
-            label: 'Workouts',
-            data: [1, 0, 1, 1, 0, 1, 0],
-            borderColor: '#4facfe',
-            backgroundColor: 'rgba(79, 172, 254, 0.1)',
-            borderWidth: 3,
-            fill: true,
-            tension: 0.4
-        }]
-    };
-    
-    try {
-        window.weeklyChart = new Chart(ctx, {
-            type: 'line',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
+    window.weeklyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Workouts',
+                data: [1, 0, 1, 1, 0, 1, 0],
+                borderColor: '#4facfe',
+                backgroundColor: 'rgba(79, 172, 254, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    ticks: { color: 'rgba(255, 255, 255, 0.7)' }
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                        ticks: { color: 'rgba(255, 255, 255, 0.7)' }
-                    },
-                    x: {
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                        ticks: { color: 'rgba(255, 255, 255, 0.7)' }
-                    }
+                x: {
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    ticks: { color: 'rgba(255, 255, 255, 0.7)' }
                 }
             }
-        });
-        console.log('Weekly chart created successfully');
-    } catch (error) {
-        console.error('Error creating weekly chart:', error);
-    }
+        }
+    });
 }
 
-function createExercisePieChart() {
+function createPieChart() {
     const ctx = document.getElementById('exercisePieChart');
-    if (!ctx) {
-        console.log('Pie chart canvas not found');
-        return;
-    }
+    if (!ctx) return;
     
-    // Destroy existing chart
-    if (window.pieChart instanceof Chart) {
+    if (window.pieChart) {
         window.pieChart.destroy();
     }
     
-    const data = {
-        labels: ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'],
-        datasets: [{
-            data: [20, 25, 20, 15, 15, 5],
-            backgroundColor: [
-                '#ff6b6b', '#4ecdc4', '#45b7d1',
-                '#96ceb4', '#ffd93d', '#6c5ce7'
-            ],
-            borderWidth: 0
-        }]
-    };
-    
-    try {
-        window.pieChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                }
-            }
-        });
-        console.log('Pie chart created successfully');
-    } catch (error) {
-        console.error('Error creating pie chart:', error);
-    }
+    window.pieChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core'],
+            datasets: [{
+                data: [20, 25, 20, 15, 15, 5],
+                backgroundColor: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffd93d', '#6c5ce7'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+        }
+    });
 }
 
-function createStrengthProgressChart() {
+function createStrengthChart() {
     const ctx = document.getElementById('strengthProgressChart');
-    if (!ctx) {
-        console.log('Strength chart canvas not found');
-        return;
-    }
+    if (!ctx) return;
     
-    // Destroy existing chart
-    if (window.strengthChart instanceof Chart) {
+    if (window.strengthChart) {
         window.strengthChart.destroy();
     }
     
-    const data = {
-        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-        datasets: [{
-            label: 'Weight (lbs)',
-            data: [135, 140, 145, 150],
-            borderColor: '#ffd93d',
-            backgroundColor: 'rgba(255, 217, 61, 0.1)',
-            borderWidth: 3,
-            fill: true,
-            tension: 0.4
-        }]
-    };
-    
-    try {
-        window.strengthChart = new Chart(ctx, {
-            type: 'line',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
+    window.strengthChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            datasets: [{
+                label: 'Weight (lbs)',
+                data: [135, 140, 145, 150],
+                borderColor: '#ffd93d',
+                backgroundColor: 'rgba(255, 217, 61, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    ticks: { color: 'rgba(255, 255, 255, 0.7)' }
                 },
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                        ticks: { color: 'rgba(255, 255, 255, 0.7)' }
-                    },
-                    x: {
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                        ticks: { color: 'rgba(255, 255, 255, 0.7)' }
-                    }
+                x: {
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    ticks: { color: 'rgba(255, 255, 255, 0.7)' }
                 }
             }
-        });
-        console.log('Strength chart created successfully');
-    } catch (error) {
-        console.error('Error creating strength chart:', error);
-    }
-}
-
-// ==========================================
-// SPLASH SCREEN
-// ==========================================
-
-function showSplashScreen() {
-    const splash = document.getElementById('splashScreen');
-    if (splash) {
-        splash.style.display = 'flex';
-    }
-}
-
-function hideSplashScreen() {
-    const splash = document.getElementById('splashScreen');
-    if (splash) {
-        splash.style.animation = 'fadeOut 0.5s ease-in-out forwards';
-        setTimeout(() => {
-            splash.style.display = 'none';
-        }, 500);
-    }
-}
-
-// ==========================================
-// PARTICLES BACKGROUND
-// ==========================================
-
-function initializeParticles() {
-    if (typeof particlesJS !== 'undefined') {
-        particlesJS('particles-js', {
-            particles: {
-                number: { value: 50, density: { enable: true, value_area: 800 } },
-                color: { value: "#ffffff" },
-                shape: { type: "circle" },
-                opacity: { value: 0.1, random: false },
-                size: { value: 3, random: true },
-                line_linked: {
-                    enable: true,
-                    distance: 150,
-                    color: "#ffffff",
-                    opacity: 0.1,
-                    width: 1
-                },
-                move: {
-                    enable: true,
-                    speed: 2,
-                    direction: "none",
-                    random: false,
-                    straight: false,
-                    out_mode: "out",
-                    bounce: false
-                }
-            },
-            interactivity: {
-                detect_on: "canvas",
-                events: {
-                    onhover: { enable: true, mode: "repulse" },
-                    onclick: { enable: true, mode: "push" },
-                    resize: true
-                }
-            },
-            retina_detect: true
-        });
-        particlesLoaded = true;
-    }
+        }
+    });
 }
 
 // ==========================================
@@ -702,18 +717,13 @@ function setupEventListeners() {
         daySelector.addEventListener('change', function() {
             const startBtn = document.getElementById('startWorkout');
             if (startBtn) {
-                if (this.value) {
-                    startBtn.disabled = false;
-                    startBtn.style.opacity = '1';
-                } else {
-                    startBtn.disabled = true;
-                    startBtn.style.opacity = '0.5';
-                }
+                startBtn.disabled = !this.value;
+                startBtn.style.opacity = this.value ? '1' : '0.5';
             }
         });
     }
     
-    // Start workout button
+    // Start workout
     const startWorkoutBtn = document.getElementById('startWorkout');
     if (startWorkoutBtn) {
         startWorkoutBtn.addEventListener('click', function() {
@@ -727,7 +737,7 @@ function setupEventListeners() {
         });
     }
     
-    // Back to home button
+    // Back home
     const backHomeBtn = document.getElementById('backHome');
     if (backHomeBtn) {
         backHomeBtn.addEventListener('click', function() {
@@ -736,7 +746,7 @@ function setupEventListeners() {
         });
     }
     
-    // Day tabs in workout screen
+    // Tab buttons - FIXED
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -747,43 +757,41 @@ function setupEventListeners() {
         });
     });
     
-    // Analytics buttons
-    const fullAnalyticsBtn = document.getElementById('fullAnalytics');
-    if (fullAnalyticsBtn) {
-        fullAnalyticsBtn.addEventListener('click', showAnalyticsModal);
+    // Sync button
+    const syncBtn = document.getElementById('syncData');
+    if (syncBtn) {
+        syncBtn.addEventListener('click', syncToGoogleSheets);
     }
     
-    const closeAnalyticsBtn = document.getElementById('closeAnalytics');
-    if (closeAnalyticsBtn) {
-        closeAnalyticsBtn.addEventListener('click', hideAnalyticsModal);
-    }
-    
-    // Notes save button
+    // Notes
     const saveNotesBtn = document.getElementById('saveNotes');
     if (saveNotesBtn) {
         saveNotesBtn.addEventListener('click', saveWorkoutNotes);
     }
     
-    // Timer control buttons
+    // Timer controls
     const stopTimerBtn = document.getElementById('stopTimer');
     if (stopTimerBtn) {
         stopTimerBtn.addEventListener('click', stopRestTimer);
-    }
-    
-    const pauseTimerBtn = document.getElementById('pauseTimer');
-    if (pauseTimerBtn) {
-        pauseTimerBtn.addEventListener('click', pauseRestTimer);
-    }
-    
-    const addTimeBtn = document.getElementById('addTime');
-    if (addTimeBtn) {
-        addTimeBtn.addEventListener('click', () => addRestTime(30));
     }
 }
 
 // ==========================================
 // SCREEN NAVIGATION
 // ==========================================
+
+function showSplashScreen() {
+    const splash = document.getElementById('splashScreen');
+    if (splash) splash.style.display = 'flex';
+}
+
+function hideSplashScreen() {
+    const splash = document.getElementById('splashScreen');
+    if (splash) {
+        splash.style.animation = 'fadeOut 0.5s ease-in-out forwards';
+        setTimeout(() => splash.style.display = 'none', 500);
+    }
+}
 
 function showHomeScreen() {
     const homeScreen = document.getElementById('homeScreen');
@@ -815,15 +823,17 @@ function updateHomeStats() {
     const avgWeekly = calculateWeeklyAverage();
     const streak = getCurrentStreak();
     
-    const totalWorkoutsEl = document.getElementById('totalWorkouts');
-    const thisWeekWorkoutsEl = document.getElementById('thisWeekWorkouts');
-    const avgWeeklyWorkoutsEl = document.getElementById('avgWeeklyWorkouts');
-    const currentStreakEl = document.getElementById('currentStreak');
+    const elements = {
+        totalWorkouts: document.getElementById('totalWorkouts'),
+        thisWeekWorkouts: document.getElementById('thisWeekWorkouts'),
+        avgWeeklyWorkouts: document.getElementById('avgWeeklyWorkouts'),
+        currentStreak: document.getElementById('currentStreak')
+    };
     
-    if (totalWorkoutsEl) totalWorkoutsEl.textContent = totalWorkouts;
-    if (thisWeekWorkoutsEl) thisWeekWorkoutsEl.textContent = thisWeek;
-    if (avgWeeklyWorkoutsEl) avgWeeklyWorkoutsEl.textContent = avgWeekly.toFixed(1);
-    if (currentStreakEl) currentStreakEl.textContent = streak;
+    if (elements.totalWorkouts) elements.totalWorkouts.textContent = totalWorkouts;
+    if (elements.thisWeekWorkouts) elements.thisWeekWorkouts.textContent = thisWeek;
+    if (elements.avgWeeklyWorkouts) elements.avgWeeklyWorkouts.textContent = avgWeekly.toFixed(1);
+    if (elements.currentStreak) elements.currentStreak.textContent = streak;
 }
 
 function getThisWeekWorkouts() {
@@ -833,9 +843,7 @@ function getThisWeekWorkouts() {
     
     Object.keys(workoutProgress.days).forEach(day => {
         const workoutDate = new Date(workoutProgress.days[day].date || Date.now());
-        if (workoutDate >= startOfWeek) {
-            count++;
-        }
+        if (workoutDate >= startOfWeek) count++;
     });
     
     return count;
@@ -877,14 +885,9 @@ function getCurrentStreak() {
 function switchDay(day) {
     currentDay = day;
     
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     const activeTab = document.querySelector(`[data-day="${day}"]`);
-    if (activeTab) {
-        activeTab.classList.add('active');
-    }
+    if (activeTab) activeTab.classList.add('active');
     
     loadWorkout(day);
 }
@@ -896,10 +899,7 @@ function loadWorkout(day) {
     const exerciseList = document.getElementById('exerciseList');
     const currentWorkout = document.getElementById('currentWorkout');
     
-    if (currentWorkout) {
-        currentWorkout.textContent = workout.name;
-    }
-    
+    if (currentWorkout) currentWorkout.textContent = workout.name;
     if (!exerciseList) return;
     
     let html = '';
@@ -1034,21 +1034,15 @@ function updateWorkoutProgress() {
     const completedSets = countCompletedSets();
     const percentage = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
     
-    const workoutProgressEl = document.getElementById('workoutProgress');
-    const progressTextEl = document.getElementById('progressText');
-    const completedSetsEl = document.getElementById('completedSets');
+    const elements = {
+        workoutProgress: document.getElementById('workoutProgress'),
+        progressText: document.getElementById('progressText'),
+        completedSets: document.getElementById('completedSets')
+    };
     
-    if (workoutProgressEl) {
-        workoutProgressEl.style.width = `${percentage}%`;
-    }
-    
-    if (progressTextEl) {
-        progressTextEl.textContent = `${Math.round(percentage)}% Complete`;
-    }
-    
-    if (completedSetsEl) {
-        completedSetsEl.textContent = `${completedSets}/${totalSets} sets`;
-    }
+    if (elements.workoutProgress) elements.workoutProgress.style.width = `${percentage}%`;
+    if (elements.progressText) elements.progressText.textContent = `${Math.round(percentage)}% Complete`;
+    if (elements.completedSets) elements.completedSets.textContent = `${completedSets}/${totalSets} sets`;
 }
 
 function countCompletedSets() {
@@ -1104,9 +1098,7 @@ function startRestTimer(seconds = 90) {
     const displayElement = document.getElementById('timerDisplay');
     const circleElement = document.getElementById('timerCircle');
     
-    if (timerSection) {
-        timerSection.style.display = 'block';
-    }
+    if (timerSection) timerSection.style.display = 'block';
     
     const totalSeconds = seconds;
     const circumference = 2 * Math.PI * 45;
@@ -1141,30 +1133,7 @@ function stopRestTimer() {
     }
     
     const timerSection = document.getElementById('restTimerSection');
-    if (timerSection) {
-        timerSection.style.display = 'none';
-    }
-}
-
-function pauseRestTimer() {
-    const pauseBtn = document.getElementById('pauseTimer');
-    
-    if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-        if (pauseBtn) {
-            pauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-        }
-    } else {
-        startRestTimer(timerSeconds);
-        if (pauseBtn) {
-            pauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-        }
-    }
-}
-
-function addRestTime(seconds) {
-    timerSeconds += seconds;
+    if (timerSection) timerSection.style.display = 'none';
 }
 
 // ==========================================
@@ -1229,29 +1198,19 @@ function showNotification(message) {
 // Analytics Modal Functions
 function showAnalyticsModal() {
     const modal = document.getElementById('analyticsModal');
-    if (modal) {
-        modal.style.display = 'flex';
-    }
+    if (modal) modal.style.display = 'flex';
 }
 
 function hideAnalyticsModal() {
     const modal = document.getElementById('analyticsModal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
+    if (modal) modal.style.display = 'none';
 }
 
 // Add notification CSS
 const notificationCSS = `
 @keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(100%);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
 }
 
 .notification-content {

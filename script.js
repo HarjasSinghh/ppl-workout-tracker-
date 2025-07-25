@@ -2,7 +2,7 @@
 // CONFIGURATION
 // ==========================================
 const GOOGLE_SHEETS_CONFIG = {
-    apiKey: 'AIzaSyBz1rmid9kIKjgUin77d5Hcf9jO8ZWkHPg',
+    apiKey: 'AIzaSyDs3gMxEUO0aLHnC7Ctwiaf1r3hOrmz0dY',
     spreadsheetId: '15O-z40Jsy2PFs0XaXle07g_hJuwBCgpEi399TC9Yaic',
 };
 

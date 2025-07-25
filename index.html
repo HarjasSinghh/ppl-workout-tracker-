@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FitTrack Pro - Workout Tracker</title>
+    <title>FitTrack Pro - Modern Workout Tracker</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://apis.google.com/js/api.js"></script>
 </head>
@@ -14,85 +16,67 @@
         <!-- Home Screen -->
         <div id="homeScreen" class="home-screen">
             <header class="home-header">
-                <h1>FitTrack Pro</h1>
-                <p>Your Personal PPL Workout Companion</p>
+                <div class="logo">FitTrack Pro</div>
+                <h1>Your Workout, Simplified.</h1>
+                <p>Select a session below to begin tracking your progress.</p>
             </header>
 
-            <div class="quick-stats-grid">
-                <div class="stat-card">
-                    <h3>Total Workouts</h3>
-                    <p id="totalWorkouts">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>This Week</h3>
-                    <p id="thisWeekWorkouts">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Workout Streak</h3>
-                    <p id="currentStreak">0</p>
-                </div>
-            </div>
-
-            <main class="workout-selector-section">
-                <h2>Start a New Session</h2>
-                <div class="day-selector-modern">
-                    <select id="daySelector" class="modern-dropdown">
-                        <option value="">Select your workout for today...</option>
-                        <option value="1">🔥 Day 1 - Push (Chest, Shoulders, Triceps)</option>
-                        <option value="2">💪 Day 2 - Pull (Back, Biceps, Traps)</option>
-                        <option value="3">🦵 Day 3 - Legs (Quads, Hamstrings, Glutes)</option>
-                        <option value="4">🔥 Day 4 - Push (Intensity)</option>
-                        <option value="5">💪 Day 5 - Pull (Volume)</option>
-                        <option value="6">💯 Day 6 - Arms (Biceps, Triceps, Forearms)</option>
-                    </select>
-                    <button id="startWorkout" class="cta-button" disabled>
-                        <span>Start Workout</span>
-                        <i class="fas fa-arrow-right"></i>
-                    </button>
+            <main class="day-selector-slider">
+                <div class="slider-container">
+                    <div class="day-card" data-day="1">
+                        <div class="day-icon"><i class="fas fa-fire"></i></div>
+                        <h3>Push Day 1</h3>
+                        <p>Chest, Shoulders</p>
+                    </div>
+                    <div class="day-card" data-day="2">
+                        <div class="day-icon"><i class="fas fa-hand-rock"></i></div>
+                        <h3>Pull Day 1</h3>
+                        <p>Back, Biceps</p>
+                    </div>
+                    <div class="day-card" data-day="3">
+                        <div class="day-icon"><i class="fas fa-walking"></i></div>
+                        <h3>Leg Day</h3>
+                        <p>Quads, Glutes</p>
+                    </div>
+                    <div class="day-card" data-day="4">
+                        <div class="day-icon"><i class="fas fa-fire-alt"></i></div>
+                        <h3>Push Day 2</h3>
+                        <p>Intensity Focus</p>
+                    </div>
+                    <div class="day-card" data-day="5">
+                        <div class="day-icon"><i class="fas fa-hand-paper"></i></div>
+                        <h3>Pull Day 2</h3>
+                        <p>Volume Focus</p>
+                    </div>
+                    <div class="day-card" data-day="6">
+                        <div class="day-icon"><i class="fas fa-bolt"></i></div>
+                        <h3>Arms Day</h3>
+                        <p>Biceps, Triceps</p>
+                    </div>
                 </div>
             </main>
         </div>
 
         <!-- Workout Screen -->
         <div id="workoutScreen" class="workout-screen" style="display: none;">
-            <header class="workout-header-modern">
-                <button id="backHome" class="back-btn">
-                    <i class="fas fa-arrow-left"></i>
-                    <span>Home</span>
+            <header class="workout-header">
+                <button id="backHome" class="icon-btn"><i class="fas fa-arrow-left"></i></button>
+                <h2 id="currentWorkout"></h2>
+                <button id="syncData" class="sync-button">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span id="syncStatus">Sync</span>
                 </button>
-                <h2 id="currentWorkout">Day 1 - Push</h2>
-                <div id="syncContainer">
-                    <button id="syncData" class="sync-button">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <span>Sync</span>
-                    </button>
-                    <span id="syncStatus"></span>
-                </div>
             </header>
 
-            <div class="day-tabs-modern">
-                <div class="tabs-container">
-                    <button class="tab-btn active" data-day="1"><i class="fas fa-fire"></i><span>Push</span></button>
-                    <button class="tab-btn" data-day="2"><i class="fas fa-hand-rock"></i><span>Pull</span></button>
-                    <button class="tab-btn" data-day="3"><i class="fas fa-walking"></i><span>Legs</span></button>
-                    <button class="tab-btn" data-day="4"><i class="fas fa-fire"></i><span>Push</span></button>
-                    <button class="tab-btn" data-day="5"><i class="fas fa-hand-rock"></i><span>Pull</span></button>
-                    <button class="tab-btn" data-day="6"><i class="fas fa-bolt"></i><span>Arms</span></button>
-                </div>
-            </div>
-
             <div class="workout-content">
-                <div id="exerciseList" class="exercise-list-modern">
-                    <!-- Exercises will be loaded here by JavaScript -->
+                <div id="exerciseList" class="exercise-list">
+                    <!-- Exercises loaded by JS -->
                 </div>
 
-                <div class="workout-notes-modern">
+                <div class="notes-card">
                     <h3><i class="fas fa-sticky-note"></i> Workout Notes</h3>
                     <textarea id="workoutNotes" placeholder="Log your thoughts, performance, and energy levels..."></textarea>
-                    <button id="saveNotes" class="save-notes-btn">
-                        <i class="fas fa-check"></i>
-                        Save Notes
-                    </button>
+                    <button id="saveNotes" class="save-btn">Save Notes</button>
                 </div>
             </div>
         </div>
@@ -100,3 +84,4 @@
     <script src="script.js"></script>
 </body>
 </html>
+

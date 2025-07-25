@@ -35,7 +35,7 @@ function initializeApp() {
 // GOOGLE SHEETS FUNCTIONS - FIXED
 // ==========================================
 async function syncToGoogleSheets() {
-    if (GOOGLE_SHEETS_CONFIG.apiKey === 'AIzaSyBz1rmid9kIKjgUin77d5Hcf9jO8ZWkHPg' || GOOGLE_SHEETS_CONFIG.spreadsheetId === '15O-z40Jsy2PFs0XaXle07g_hJuwBCgpEi399TC9Yaic') {
+    if (GOOGLE_SHEETS_CONFIG.apiKey === 'YOUR_API_KEY_HERE' || GOOGLE_SHEETS_CONFIG.spreadsheetId === 'YOUR_SPREADSHEET_ID_HERE') {
         updateSyncStatus('⚠️ Not Configured');
         showNotification('Please configure Google Sheets API Key and Spreadsheet ID in script.js');
         return;

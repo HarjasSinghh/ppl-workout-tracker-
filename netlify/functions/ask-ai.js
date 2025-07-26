@@ -1,4 +1,4 @@
-// This is the new, unified netlify/functions/ask-ai.js
+// This is the complete, unified netlify/functions/ask-ai.js
 exports.handler = async function(event) {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method Not Allowed' };
@@ -18,7 +18,7 @@ exports.handler = async function(event) {
     if (type === 'chat') {
         prompt = `You are an expert fitness coach. Provide concise, helpful advice. User's question: "${payload}"`;
     } else if (type === 'analysis') {
-        prompt = `You are a world-class fitness analyst. Analyze the following workout data summary. Identify any areas where the user might be stalling or could improve, and provide 2-3 actionable tips in a motivational tone. Format your response with clear headings. Here is the data: ${payload}`;
+        prompt = `You are a world-class fitness analyst. Analyze the following workout data summary. Identify any areas where the user might be stalling or could improve, and provide 2-3 actionable tips in a motivational tone. Format your response with clear headings (e.g., using **bold text**). Here is the data: ${payload}`;
     } else {
         return { statusCode: 400, body: JSON.stringify({ error: "Bad Request: Invalid type." }) };
     }

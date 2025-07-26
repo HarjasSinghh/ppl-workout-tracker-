@@ -14,32 +14,44 @@ const workoutData = {
     5: { name: "Pull Day 2", bodyPart: "Pull", exercises: [{ name: "Close Grip Lat Pulldown", sets: 3 }, { name: "BB Row", sets: 3 }, { name: "Face Pulls", sets: 3 }, { name: "Incline Curls", sets: 3 }] },
     6: { name: "Arms Day", bodyPart: "Arms", exercises: [{ name: "Cable EZ Bar Curls", sets: 4 }, { name: "Tricep Pushdowns", sets: 4 }, { name: "Preacher Curls", sets: 3 }, { name: "Wrist Curls", sets: 3 }, { name: "Farmer Walks", sets: 3 }] }
 };
-let currentUser = 'Harjas', currentDay = 1, workoutProgress = {}, gapiInited = false, gisInited = false, tokenClient, sheetData = [], chartInstances = {};
+let currentUser = 'Harjas', currentDay = 1, workoutProgress = {}, gapiInited = false, gisInited = false, tokenClient, sheetData = [], chartInstances = {}, appInitialized = false;
 
 // --- INITIALIZATION ---
 window.gapiLoaded = () => gapi.load('client', initializeGapiClient);
 window.gisLoaded = () => {
     tokenClient = google.accounts.oauth2.initTokenClient({ client_id: GOOGLE_CONFIG.CLIENT_ID, scope: GOOGLE_CONFIG.SCOPES, callback: handleAuthResponse, });
-    gisInited = true;
+    gisInited = true; checkInitialAuth();
 };
 async function initializeGapiClient() {
     await gapi.client.init({ discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"] });
-    gapiInited = true;
+    gapiInited = true; checkInitialAuth();
+}
+function checkInitialAuth() {
+    if (gapiInited && gisInited) {
+        updateSigninStatus(gapi.client.getToken() !== null);
+    }
 }
 document.addEventListener('DOMContentLoaded', () => {
-    setupEventListeners();
-    loadCurrentUser();
-    workoutProgress = JSON.parse(localStorage.getItem('workoutProgress')) || {};
-    updateSigninStatus(gapi.client.getToken() !== null);
+    document.getElementById('authorizeBtn').addEventListener('click', handleAuthClick);
+    setupAIChatListeners(); // AI Chat can be set up early
 });
 
+// --- STAGE 2 INITIALIZATION ---
+function initializeApp() {
+    if (appInitialized) return; // Prevent re-initialization
+    loadCurrentUser();
+    workoutProgress = JSON.parse(localStorage.getItem('workoutProgress')) || {};
+    setupMainAppEventListeners();
+    handleDateRangeChange();
+    appInitialized = true;
+}
+
 // --- EVENT LISTENERS ---
-function setupEventListeners() {
+function setupMainAppEventListeners() {
     document.querySelectorAll('.nav-link').forEach(link => link.addEventListener('click', e => { e.preventDefault(); showPage(link.dataset.page); }));
     document.querySelectorAll('.day-card').forEach(card => card.addEventListener('click', () => startWorkout(card.dataset.day)));
     document.querySelectorAll('.user-card').forEach(card => card.addEventListener('click', () => selectUser(card.dataset.user)));
     document.getElementById('backToHomeBtn').addEventListener('click', () => showPage('homeScreen'));
-    document.getElementById('authorizeBtn').addEventListener('click', handleAuthClick);
     document.getElementById('globalSyncBtn').addEventListener('click', syncWorkoutData);
     document.getElementById('resetWorkoutBtn').addEventListener('click', resetCurrentWorkout);
     document.getElementById('workoutNotes').addEventListener('input', saveNotes);
@@ -47,19 +59,24 @@ function setupEventListeners() {
     document.getElementById('clearSheetBtn').addEventListener('click', clearGoogleSheet);
     document.getElementById('dateRangeFilter').addEventListener('change', handleDateRangeChange);
     ['bodyPartFilter', 'exerciseFilter', 'startDateFilter', 'endDateFilter'].forEach(id => document.getElementById(id)?.addEventListener('change', renderDashboard));
-    setupAIChatListeners();
 }
 
 // --- USER & AUTH ---
 function loadCurrentUser() { /* ... unchanged ... */ }
 function selectUser(user) { /* ... unchanged ... */ }
 function handleAuthClick() { if (gapiInited && gisInited) tokenClient.requestAccessToken({ prompt: 'consent' }); }
-function handleAuthResponse(resp) { if (resp.error) { console.error('Auth Error:', resp); showNotification("Authorization failed.", "error"); return; } updateSigninStatus(true); }
+function handleAuthResponse(resp) {
+    if (resp.error) { console.error('Auth Error:', resp); showNotification("Authorization failed.", "error"); return; }
+    updateSigninStatus(true);
+}
 function updateSigninStatus(isSignedIn) {
     document.getElementById('authSection').classList.toggle('hidden', isSignedIn);
     document.getElementById('mainAppContent').classList.toggle('hidden', !isSignedIn);
     document.getElementById('globalSyncBtn').classList.toggle('hidden', !isSignedIn);
-    if(isSignedIn) fetchDashboardData();
+    if (isSignedIn) {
+        initializeApp();
+        fetchDashboardData();
+    }
 }
 
 // --- UI & WORKOUT LOGIC ---
@@ -79,29 +96,38 @@ function prepareDataForSheets() {
         const progress = workoutProgress[dayKey];
         if (!workout || !progress.sets) continue;
         let hasCompletedSets = false;
-        Object.keys(progress.sets).forEach(exIndex => {
-            Object.keys(progress.sets[exIndex]).forEach(setIndex => {
-                const set = progress.sets[exIndex][setIndex];
-                if (set.completed) hasCompletedSets = true;
-            });
-        });
+        Object.keys(progress.sets).forEach(exIndex => Object.keys(progress.sets[exIndex]).forEach(setIndex => {
+            if (progress.sets[exIndex][setIndex].completed) hasCompletedSets = true;
+        }));
         if (hasCompletedSets) {
-            Object.keys(progress.sets).forEach(exIndex => {
-                Object.keys(progress.sets[exIndex]).forEach(setIndex => {
-                    const set = progress.sets[exIndex][setIndex];
-                    if (set.completed) {
-                        rows.push([progress.date, workout.name, workout.bodyPart, workout.exercises[exIndex].name, set.weight || 0, set.reps || 0, currentUser, progress.notes || '']);
-                    }
-                });
-            });
+            Object.keys(progress.sets).forEach(exIndex => Object.keys(progress.sets[exIndex]).forEach(setIndex => {
+                const set = progress.sets[exIndex][setIndex];
+                if (set.completed) rows.push([progress.date, workout.name, workout.bodyPart, workout.exercises[exIndex].name, set.weight || 0, set.reps || 0, currentUser, progress.notes || '']);
+            }));
         }
     }
     return [...new Map(rows.map(item => [item.join(), item])).values()];
 }
-async function clearGoogleSheet() { /* ... unchanged, but ensure range is A2:H ... */ }
+async function clearGoogleSheet() {
+    if (!confirm(`This will delete ALL data for BOTH users from the Google Sheet. This action cannot be undone. Are you sure?`)) return;
+    if (!gapi.client.getToken()) return showNotification("Please authorize first.", "error");
+    showNotification("Clearing sheet data...", "info");
+    try {
+        await gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID, range: 'WorkoutLog!A2:H' });
+        sheetData = []; renderDashboard();
+        showNotification("All data has been cleared from your Google Sheet.", "success");
+    } catch (err) { console.error("Error clearing sheet:", err); showNotification("Failed to clear sheet data.", "error"); }
+}
 
 // --- DASHBOARD ---
-async function fetchDashboardData() { /* ... unchanged, but ensure range is A2:H ... */ }
+async function fetchDashboardData() {
+    if (!gapi.client.getToken()) { document.getElementById('dashboardContent').innerHTML = `<div class="dashboard-card"><p>Please authorize to view dashboard.</p></div>`; return; }
+    try {
+        const response = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID, range: 'WorkoutLog!A2:H' });
+        sheetData = (response.result.values || []).map(row => ({ date: new Date(row[0]), bodyPart: row[2], exercise: row[3], weight: parseFloat(row[4]) || 0, reps: parseInt(row[5]) || 0, user: row[6], notes: row[7] }));
+        populateBodyPartFilter(); handleDateRangeChange();
+    } catch (err) { console.error("Error fetching data:", err); }
+}
 function handleDateRangeChange() { /* ... unchanged ... */ }
 function populateBodyPartFilter() { /* ... unchanged ... */ }
 function populateExerciseFilter() { /* ... unchanged ... */ }

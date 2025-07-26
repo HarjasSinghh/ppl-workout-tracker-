@@ -25,18 +25,26 @@
             <!-- Home Screen -->
             <div id="homeScreen" class="page active">
                 <header class="page-header"><div><h1>Welcome Back</h1><p>Ready to crush your next session?</p></div></header>
-                <div class="user-selector">
-                    <div class="user-card active" data-user="Harjas"><i class="fas fa-user"></i><span>Harjas</span></div>
-                    <div class="user-card" data-user="Darvesh"><i class="fas fa-user"></i><span>Darvesh</span></div>
+                
+                <div id="authSection" class="auth-section">
+                    <p>Please authorize with Google to enable all features.</p>
+                    <button id="authorizeBtn" class="primary-btn"><i class="fab fa-google"></i> Authorize Google</button>
                 </div>
-                <h2 id="workout-section-title">Select Workout for Harjas</h2>
-                <div class="workout-grid">
-                    <div class="day-card" data-day="1"><i class="fas fa-fire"></i><h3>Push Day 1</h3></div>
-                    <div class="day-card" data-day="2"><i class="fas fa-hand-rock"></i><h3>Pull Day 1</h3></div>
-                    <div class="day-card" data-day="3"><i class="fas fa-walking"></i><h3>Leg Day</h3></div>
-                    <div class="day-card" data-day="4"><i class="fas fa-fire-alt"></i><h3>Push Day 2</h3></div>
-                    <div class="day-card" data-day="5"><i class="fas fa-hand-paper"></i><h3>Pull Day 2</h3></div>
-                    <div class="day-card" data-day="6"><i class="fas fa-bolt"></i><h3>Arms Day</h3></div>
+
+                <div id="mainAppContent" class="hidden">
+                    <div class="user-selector">
+                        <div class="user-card active" data-user="Harjas"><i class="fas fa-user"></i><span>Harjas</span></div>
+                        <div class="user-card" data-user="Darvesh"><i class="fas fa-user"></i><span>Darvesh</span></div>
+                    </div>
+                    <h2 id="workout-section-title">Select Workout for Harjas</h2>
+                    <div class="workout-grid">
+                        <div class="day-card" data-day="1"><i class="fas fa-fire"></i><h3>Push Day 1</h3></div>
+                        <div class="day-card" data-day="2"><i class="fas fa-hand-rock"></i><h3>Pull Day 1</h3></div>
+                        <div class="day-card" data-day="3"><i class="fas fa-walking"></i><h3>Leg Day</h3></div>
+                        <div class="day-card" data-day="4"><i class="fas fa-fire-alt"></i><h3>Push Day 2</h3></div>
+                        <div class="day-card" data-day="5"><i class="fas fa-hand-paper"></i><h3>Pull Day 2</h3></div>
+                        <div class="day-card" data-day="6"><i class="fas fa-bolt"></i><h3>Arms Day</h3></div>
+                    </div>
                 </div>
             </div>
 
@@ -44,10 +52,9 @@
             <div id="workoutScreen" class="page">
                 <header class="page-header">
                     <div><button id="backToHomeBtn" class="icon-btn"><i class="fas fa-arrow-left"></i> Back</button><h1 id="currentWorkoutTitle"></h1></div>
-                    <div class="auth-container"><button id="resetWorkoutBtn" class="secondary-btn">Reset</button><button id="authorizeBtn" class="primary-btn" style="visibility: hidden;">Authorize</button></div>
+                    <button id="resetWorkoutBtn" class="secondary-btn">Reset</button>
                 </header>
                 <div id="exerciseListContainer" class="exercise-list-container"></div>
-                <!-- NEW: Workout Notes Section -->
                 <div class="notes-section">
                     <h3><i class="fas fa-sticky-note"></i> Workout Notes</h3>
                     <textarea id="workoutNotes" placeholder="Log your thoughts, performance, and energy levels..."></textarea>
@@ -71,7 +78,7 @@
     </div>
 
     <!-- Floating Action Buttons -->
-    <button id="globalSyncBtn" class="floating-btn sync-btn" title="Sync All Pending Workouts"><i class="fas fa-sync-alt"></i></button>
+    <button id="globalSyncBtn" class="floating-btn sync-btn hidden" title="Sync All Pending Workouts"><i class="fas fa-sync-alt"></i></button>
     <button id="chatToggleBtn" class="floating-btn chat-btn" title="Open AI Coach"><i class="fas fa-comments"></i></button>
     
     <!-- AI Chat Modal -->

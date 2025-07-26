@@ -71,7 +71,17 @@
                     </div>
                 </header>
                 <div class="dashboard-controls">
-                    <select id="dateRangeFilter" class="dropdown-filter"><option value="all">All Time</option><option value="7">Last 7 Days</option><option value="30">Last 30 Days</option></select>
+                    <select id="dateRangeFilter" class="dropdown-filter">
+                        <option value="all">All Time</option>
+                        <option value="7">Last 7 Days</option>
+                        <option value="30">Last 30 Days</option>
+                    </select>
+                    <select id="bodyPartFilter" class="dropdown-filter">
+                        <option value="all">All Body Parts</option>
+                    </select>
+                    <select id="exerciseFilter" class="dropdown-filter" disabled>
+                        <option value="all">All Exercises</option>
+                    </select>
                 </div>
                 <div id="dashboardContent" class="dashboard-grid"></div>
             </div>

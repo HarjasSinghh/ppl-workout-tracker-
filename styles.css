@@ -72,17 +72,13 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .day-card:hover { transform: translateY(-4px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
 .day-card i { font-size: 1.8rem; color: var(--primary-color); margin-bottom: 8px; }
 
-/* --- New Compact Workout Logging UI --- */
-.compact-workout-container { background: var(--surface-color); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
-.compact-workout-header { display: grid; grid-template-columns: 3fr 1fr 1.5fr 1fr 1fr; gap: 8px; padding: 12px 16px; background-color: #f8f9fa; font-weight: 600; color: var(--text-secondary); font-size: 0.8rem; text-align: center; }
-.compact-workout-header span:first-child { text-align: left; }
-.exercise-list-container { display: flex; flex-direction: column; }
-.compact-set-row { display: grid; grid-template-columns: 3fr 1fr 1.5fr 1fr 1fr; gap: 8px; align-items: center; padding: 8px 16px; border-bottom: 1px solid var(--border-color); }
-.compact-set-row:last-child { border-bottom: none; }
-.compact-set-row .set-label { text-align: center; font-weight: 500; }
-.compact-set-row .set-checkbox { display: flex; justify-content: center; }
-.compact-set-row input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--primary-color); }
-.compact-set-row select, .compact-set-row input { width: 100%; padding: 8px; font-size: 0.95rem; }
+/* --- New Workout Log UI --- */
+.workout-log-container { display: flex; flex-direction: column; gap: 16px; }
+.exercise-log-item { background: var(--surface-color); padding: 16px; border-radius: var(--radius); box-shadow: var(--shadow); }
+.exercise-log-header { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+.exercise-log-header .exercise-select { flex-grow: 1; font-weight: 600; }
+.exercise-log-header .set-select { min-width: 100px; }
+.set-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 /* --- Notes & Dashboard --- */
 .notes-section { margin-top: 24px; }
@@ -119,19 +115,12 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   .app-shell { flex-direction: column; }
   .sidebar { width: 100%; height: 64px; flex-direction: row; justify-content: space-around; padding: 0; border-right: none; border-top: 1px solid var(--border-color); position: fixed; bottom: 0; background: var(--surface-color); z-index: 100; }
   .logo { display: none; }
-  .nav-link { flex-direction: column; gap: 2px; }
+  .nav-link { flex: 1; flex-direction: column; gap: 2px; text-align: center; }
   .nav-link i { font-size: 1.5rem; }
   .nav-link span { font-size: 0.7rem; }
   .main-content { padding: 16px; padding-bottom: 80px; }
   .header-actions { flex-grow: 1; justify-content: flex-end; }
   .page-header h1 { font-size: 1.5rem; }
-  .compact-workout-header { display: none; } /* Hide header on mobile, rely on placeholders */
-  .compact-set-row { grid-template-columns: 1fr; gap: 12px; padding: 16px; border: 1px solid var(--border-color); border-radius: var(--radius); margin-bottom: 12px; }
-  .compact-set-row > * { text-align: left !important; }
-  .compact-set-row .set-checkbox { order: 5; grid-column: span 2; display: flex; align-items: center; gap: 8px; }
-  .compact-set-row .set-checkbox::after { content: 'Mark as completed'; }
-  .compact-set-row .exercise-select-compact { grid-column: span 2; }
-  .compact-set-row .set-label { display: none; } /* Hide label on mobile */
   .floating-btn { right: 16px; bottom: 80px; }
   .sync-btn { bottom: 152px; }
 }

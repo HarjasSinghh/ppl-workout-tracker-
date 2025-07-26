@@ -2,7 +2,7 @@
 
 /**
  * ===================================================================
- * FitTrack Pro - Main Application Script v7.2 (Home Screen Fix)
+ * FitTrack Pro - Main Application Script v7.3 (Final Notes Logic)
  * ===================================================================
  */
 
@@ -199,7 +199,9 @@ function prepareDataForSheets() {
         if (setIndex === 'selectedExercise') continue;
         const set = exProgress[setIndex];
         if (set?.completed) {
-          rows.push([progress.date, workoutDef.name, exName, parseInt(setIndex) + 1, set.weight || 0, set.reps || 0, currentUser, noteAdded ? '' : progress.notes || '']);
+          // Attach the note to the first completed set of the session
+          const noteToSync = noteAdded ? '' : progress.notes || '';
+          rows.push([progress.date, workoutDef.name, exName, parseInt(setIndex) + 1, set.weight || 0, set.reps || 0, currentUser, noteToSync]);
           noteAdded = true;
         }
       }
@@ -208,8 +210,18 @@ function prepareDataForSheets() {
   return rows;
 }
 
+/**
+ * FINAL FIX: This function now correctly captures notes before sync and clears the UI after.
+ */
 async function syncWorkoutData() {
   if (!gapi.client?.getToken()) return showNotification("Please authorize first.", "error");
+
+  // Capture final notes right before sync
+  const notesTextArea = document.getElementById('workoutNotes');
+  if (notesTextArea && workoutProgress[currentDay]) {
+    workoutProgress[currentDay].notes = notesTextArea.value;
+  }
+
   const rows = prepareDataForSheets();
   if (rows.length === 0) return showNotification("No pending workouts to sync.", "info");
   
@@ -217,10 +229,25 @@ async function syncWorkoutData() {
   try {
     await gapi.client.sheets.spreadsheets.values.append({ spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID, range: 'WorkoutLog!A1', valueInputOption: 'USER_ENTERED', insertDataOption: 'INSERT_ROWS', resource: { values: rows } });
     showNotification("Workouts synced successfully!", "success");
+    
     const syncedDays = [...new Set(rows.map(row => Object.keys(workoutData).find(day => workoutData[day].name === row[1])))];
-    syncedDays.forEach(day => { if (day && workoutProgress[day]) delete workoutProgress[day]; });
+    
+    syncedDays.forEach(day => { 
+      if (day && workoutProgress[day]) {
+        delete workoutProgress[day]; 
+      }
+    });
+    
     saveWorkoutProgress();
-  } catch (error) { showNotification("Sync failed. Check console.", "error"); }
+    
+    // Clear the notes UI if the current workout was part of the sync
+    if (syncedDays.includes(currentDay) && notesTextArea) {
+      notesTextArea.value = '';
+    }
+
+  } catch (error) { 
+    showNotification("Sync failed. Check console.", "error"); 
+  }
 }
 
 async function fetchDashboardData(showNotify = true) {
@@ -262,19 +289,13 @@ function getFilteredDashboardData() {
   return sheetData.filter(row => row.user === currentUser && (dateRange === 'all' || (new Date() - row.date) / 86400000 <= parseInt(dateRange)) && (bodyPart === 'all' || row.bodyPart === bodyPart) && (exercise === 'all' || row.exercise === exercise));
 }
 
-function renderDashboard() {
-  const content=document.getElementById('dashboardContent');const filteredData=getFilteredDashboardData();if(filteredData.length===0){content.innerHTML=`<div class="dashboard-card"><p>No data found for this selection.</p></div>`;if(chartInstance){chartInstance.destroy();chartInstance=null}return}const e1RM=(w,r)=>(r>0?w*(1+r/30):0);filteredData.forEach(row=>row.e1RM=e1RM(row.weight,row.reps));const bestSet=filteredData.reduce((max,row)=>(row.e1RM>max.e1RM?row:max),{e1RM:0});content.innerHTML=`<div class="dashboard-card"><h3>Best Lift</h3><p style="font-size:2rem;font-weight:700">${bestSet.weight}kg x ${bestSet.reps} reps</p><small>${bestSet.exercise}</small></div><div class="dashboard-card"><h3>Est. 1-Rep Max</h3><p style="font-size:2rem;font-weight:700">${bestSet.e1RM.toFixed(1)}kg</p></div><div class="dashboard-card"style="grid-column:1/-1"><div class="chart-container"><canvas id="progressChart"></canvas></div></div>`;renderProgressChart(filteredData,'progressChart',document.getElementById('exerciseFilter').value!=='all'?`1RM for ${document.getElementById('exerciseFilter').value}`:'Est. 1RM (kg)')
-}
-
+function renderDashboard() { const content=document.getElementById('dashboardContent');const filteredData=getFilteredDashboardData();if(filteredData.length===0){content.innerHTML=`<div class="dashboard-card"><p>No data found for this selection.</p></div>`;if(chartInstance){chartInstance.destroy();chartInstance=null}return}const e1RM=(w,r)=>(r>0?w*(1+r/30):0);filteredData.forEach(row=>row.e1RM=e1RM(row.weight,row.reps));const bestSet=filteredData.reduce((max,row)=>(row.e1RM>max.e1RM?row:max),{e1RM:0});content.innerHTML=`<div class="dashboard-card"><h3>Best Lift</h3><p style="font-size:2rem;font-weight:700">${bestSet.weight}kg x ${bestSet.reps} reps</p><small>${bestSet.exercise}</small></div><div class="dashboard-card"><h3>Est. 1-Rep Max</h3><p style="font-size:2rem;font-weight:700">${bestSet.e1RM.toFixed(1)}kg</p></div><div class="dashboard-card"style="grid-column:1/-1"><div class="chart-container"><canvas id="progressChart"></canvas></div></div>`;renderProgressChart(filteredData,'progressChart',document.getElementById('exerciseFilter').value!=='all'?`1RM for ${document.getElementById('exerciseFilter').value}`:'Est. 1RM (kg)') }
 function renderProgressChart(data,canvasId,label){if(chartInstance)chartInstance.destroy();const ctx=document.getElementById(canvasId)?.getContext('2d');if(ctx){chartInstance=new Chart(ctx,{type:'line',data:{labels:data.map(d=>d.date.toLocaleDateString('en-GB')),datasets:[{label:label,data:data.map(d=>d.e1RM.toFixed(1)),borderColor:'var(--primary-color)',tension:0.1,fill:true,backgroundColor:'rgba(11,87,208,0.1)'}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{ticks:{maxRotation:45,minRotation:30}},y:{beginAtZero:true}}}})}}
 
 // 7. USER MANAGEMENT & NAVIGATION
 function loadCurrentUser() { currentUser = localStorage.getItem('currentUser') || 'Harjas'; document.querySelectorAll('.user-card').forEach(c => c.classList.toggle('active', c.dataset.user === currentUser)); document.getElementById('workout-section-title').textContent = `Select Workout for ${currentUser}`; }
 function selectUser(user) { currentUser = user; localStorage.setItem('currentUser', user); loadCurrentUser(); if (document.getElementById('dashboardScreen').classList.contains('active')) fetchDashboardData(false); }
 
-/**
- * BUG FIX: This function now correctly calls the appropriate loader for each page.
- */
 function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page === pageId));
@@ -283,7 +304,6 @@ function showPage(pageId) {
   if (pageEl) {
     pageEl.classList.add('active');
     
-    // Load data or render UI for the activated page
     if (pageId === 'homeScreen') {
       renderHome();
     } else if (pageId === 'workoutScreen') {
@@ -319,7 +339,12 @@ function setupEventListeners() {
   document.getElementById('closeChatBtn')?.addEventListener('click', () => document.getElementById('aiChatModal').classList.remove('active'));
   document.getElementById('sendChatBtn')?.addEventListener('click', sendChatMessage);
   document.getElementById('chatInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') sendChatMessage(); });
-  document.getElementById('workoutNotes')?.addEventListener('input', (e) => { if (workoutProgress[currentDay]) { workoutProgress[currentDay].notes = e.target.value; saveWorkoutProgress(); } });
+  document.getElementById('workoutNotes')?.addEventListener('input', (e) => { 
+    if (workoutProgress[currentDay]) {
+      workoutProgress[currentDay].notes = e.target.value;
+      saveWorkoutProgress(); // Save notes as they are typed
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {

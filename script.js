@@ -39,24 +39,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- EVENT LISTENERS ---
 function setupEventListeners() {
-    // Navigation
     document.querySelectorAll('.nav-link').forEach(link => link.addEventListener('click', e => { e.preventDefault(); showPage(link.dataset.page); }));
     document.querySelectorAll('.day-card').forEach(card => card.addEventListener('click', () => startWorkout(card.dataset.day)));
     document.getElementById('backToHomeBtn').addEventListener('click', () => showPage('homeScreen'));
-    // User Management
     document.querySelectorAll('.user-card').forEach(card => card.addEventListener('click', () => selectUser(card.dataset.user)));
-    // Auth and Sync
     document.querySelectorAll('[id^="authorizeBtn"]').forEach(btn => btn.addEventListener('click', handleAuthClick));
     document.getElementById('globalSyncBtn').addEventListener('click', syncWorkoutData);
-    // Workout Controls
     document.getElementById('resetWorkoutBtn').addEventListener('click', resetCurrentWorkout);
     document.getElementById('workoutNotes').addEventListener('input', saveNotes);
-    // Dashboard Controls
     document.getElementById('analyzeProgressBtn').addEventListener('click', analyzeProgressWithAI);
     document.getElementById('clearSheetBtn').addEventListener('click', clearGoogleSheet);
     document.getElementById('dateRangeFilter').addEventListener('change', handleDateRangeChange);
     ['bodyPartFilter', 'exerciseFilter', 'startDateFilter', 'endDateFilter'].forEach(id => document.getElementById(id)?.addEventListener('change', renderDashboard));
-    // AI Chat
     setupAIChatListeners();
 }
 
@@ -82,11 +76,7 @@ function handleAuthClick() {
     }
 }
 function handleAuthResponse(resp) {
-    if (resp.error) {
-        console.error('Auth Error:', resp);
-        showNotification("Authorization failed.", "error");
-        return;
-    }
+    if (resp.error) { console.error('Auth Error:', resp); showNotification("Authorization failed.", "error"); return; }
     updateSigninStatus(true);
 }
 function updateSigninStatus(isSignedIn) {
@@ -95,9 +85,12 @@ function updateSigninStatus(isSignedIn) {
     ['analyzeProgressBtn', 'clearSheetBtn', 'globalSyncBtn'].forEach(id => {
         document.getElementById(id).disabled = !isSignedIn;
     });
-
-    if (isSignedIn && document.getElementById('dashboardScreen').classList.contains('active')) {
-        fetchDashboardData();
+    if (isSignedIn) {
+        if (document.getElementById('dashboardScreen').classList.contains('active')) {
+            fetchDashboardData();
+        }
+    } else {
+        document.getElementById('dashboardContent').innerHTML = `<div class="dashboard-card"><p>Please authorize to view dashboard.</p></div>`;
     }
 }
 
@@ -197,9 +190,22 @@ async function fetchDashboardData() {
     if (!gapi.client.getToken()) { document.getElementById('dashboardContent').innerHTML = `<div class="dashboard-card"><p>Please authorize to view dashboard.</p></div>`; return; }
     try {
         const response = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID, range: 'WorkoutLog!A2:H' });
-        sheetData = (response.result.values || []).map(row => ({ date: new Date(row[0]), bodyPart: row[2], exercise: row[3], weight: parseFloat(row[4]) || 0, reps: parseInt(row[5]) || 0, user: row[6], notes: row[7] }));
-        populateBodyPartFilter(); handleDateRangeChange();
-    } catch (err) { console.error("Error fetching data:", err); }
+        sheetData = (response.result.values || []).map(row => ({
+            // FIX: Robust date parsing to prevent timezone issues.
+            date: new Date(row[0] + 'T00:00:00'),
+            bodyPart: row[2],
+            exercise: row[3],
+            weight: parseFloat(row[4]) || 0,
+            reps: parseInt(row[5]) || 0,
+            user: row[6],
+            notes: row[7]
+        }));
+        populateBodyPartFilter();
+        handleDateRangeChange();
+    } catch (err) {
+        console.error("Error fetching data:", err);
+        showNotification("Failed to fetch dashboard data.", "error");
+    }
 }
 function handleDateRangeChange() {
     const range = document.getElementById('dateRangeFilter').value;
@@ -230,15 +236,25 @@ function populateExerciseFilter() {
 function renderDashboard() {
     const bodyPart = document.getElementById('bodyPartFilter').value; const exercise = document.getElementById('exerciseFilter').value;
     const startDateVal = document.getElementById('startDateFilter').value; const endDateVal = document.getElementById('endDateFilter').value;
-    const startDate = startDateVal ? new Date(startDateVal) : null; const endDate = endDateVal ? new Date(endDateVal) : null;
-    if (startDate) startDate.setHours(0, 0, 0, 0); if (endDate) endDate.setHours(23, 59, 59, 999);
-    const data = sheetData.filter(row => row.user === currentUser && (bodyPart === 'all' || row.bodyPart === bodyPart) && (exercise === 'all' || row.exercise === exercise) && (!startDate || new Date(row.date) >= startDate) && (!endDate || new Date(row.date) <= endDate));
+    const startDate = startDateVal ? new Date(startDateVal + 'T00:00:00') : null; const endDate = endDateVal ? new Date(endDateVal + 'T23:59:59') : null;
+    
+    const data = sheetData.filter(row => {
+        // FIX: Compare date objects directly. This was the critical bug.
+        return row.user === currentUser &&
+            (bodyPart === 'all' || row.bodyPart === bodyPart) &&
+            (exercise === 'all' || row.exercise === exercise) &&
+            (!startDate || row.date >= startDate) &&
+            (!endDate || row.date <= endDate);
+    });
+
     const container = document.getElementById('dashboardContent');
-    if (data.length === 0) { container.innerHTML = `<div class="dashboard-card"><p>No data for this selection.</p></div>`; return; }
+    if (data.length === 0) { container.innerHTML = `<div class="dashboard-card"><p>No data found for this selection.</p></div>`; return; }
+    
     const e1RM = (w, r) => r > 0 ? w * (1 + r / 30) : 0; data.forEach(row => row.e1RM = e1RM(row.weight, row.reps));
     const bestSet = data.reduce((max, row) => row.e1RM > max.e1RM ? row : max, { e1RM: 0 });
     const progressData = data.filter(row => row.exercise === bestSet.exercise).sort((a, b) => a.date - b.date);
     const strengthChange = progressData.length > 1 ? ((progressData[progressData.length - 1].e1RM - progressData[0].e1RM) / progressData[0].e1RM * 100).toFixed(1) : 0;
+    
     container.innerHTML = `<div class="dashboard-card"><h3>Best Lift</h3><p style="font-size: 2rem; font-weight: 700;">${bestSet.weight} kg x ${bestSet.reps} reps</p><small>${bestSet.exercise}</small></div><div class="dashboard-card"><h3>Est. 1-Rep Max</h3><p style="font-size: 2rem; font-weight: 700;">${bestSet.e1RM.toFixed(1)} kg</p><small>Your estimated strength score.</small></div><div class="dashboard-card tip-card"><h3><i class="fas fa-lightbulb"></i>Quick Tip</h3><p>${generateAITip(strengthChange, bestSet.reps)}</p></div><div id="aiAnalysisCard" class="dashboard-card" style="grid-column: 1 / -1; display: none;"><h3>AI Analysis</h3><div id="aiAnalysisContent"></div></div><div class="dashboard-card" style="grid-column: 1 / -1;"><div class="chart-container"><canvas id="progressChart"></canvas></div></div>`;
     renderProgressChart(progressData, 'progressChart');
 }
@@ -281,4 +297,4 @@ async function sendChatMessage() {
 }
 
 // --- UTILITIES ---
-function showNotification(message, type = 'info') { const el = document.createElement('div'); el.className = `notification ${type}`; el.textContent = message; el.style.cssText = `position: fixed; top: 20px; right: 20px; background-color: ${type === 'error' ? 'var(--danger-color)' : type === 'success' ? '#0F9D58' : 'var(--primary-color)'}; color: white; padding: 12px 24px; border-radius: 8px; box-shadow: var(--shadow); z-index: 2000; opacity: 0; transition: all 0.3s; transform: translateY(-10px);`; document.body.appendChild(el); setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; }, 10); setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 4000); }
+function showNotification(message, type = 'info') { const el = document.createElement('div'); el.className = `notification ${type}`; el.textContent = message; el.style.cssText = `position: fixed; top: 20px; right: 20px; background-color: ${type === 'error' ? 'var(--danger-color)' : type === 'success' ? '#0F9D58' : 'var(--primary-color)'}; color: white; padding: 12px 24px; border-radius: 8px; box-shadow: var(--shadow); z-index: 2000; opacity: 0; transition: all 0.3s; transform: translateY(-10px);`; document.body.appendChild(el); setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; }, 10); setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 4000); }, 4000); }

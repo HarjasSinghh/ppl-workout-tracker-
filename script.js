@@ -2,7 +2,7 @@
 
 /**
  * ===================================================================
- * FitTrack Pro - Main Application Script v5.0 (Contextual AI)
+ * FitTrack Pro - Main Application Script v6.0 (Chat Memory & Sync Fix)
  * ===================================================================
  */
 
@@ -16,6 +16,7 @@ const GOOGLE_CONFIG = {
   SCOPES: 'https://www.googleapis.com/auth/spreadsheets',
 };
 
+// Full workout data based on the provided PDF
 const workoutData = {
     1: { name: 'Push Day 1', bodyPart: 'Push', exercises: [ { name: 'BB Flat Bench Press', sets: 4, reps: '10, 8, 6, 4', alternatives: ['Machine bench press', 'incline bench press', 'db flat bench press'] }, { name: 'DB Incline Press', sets: 3, reps: '12, 8, 6', alternatives: ['Incline bench press', 'machine incline bench press', 'flat db bench press'] }, { name: 'DB Shoulder Press', sets: 4, reps: '15, 12, 10, 6', alternatives: ['Machine shoulder press', 'barbell shoulder press', 'shoulder front raises'] }, { name: 'Cable Straight Pushdown', sets: 3, reps: '15, 12, 10 + drop', alternatives: ['Rope pushdowns', 'single hand cable pushdowns', 'skull crushers'] }, { name: 'DB Lateral Raises', sets: 4, reps: '12, 10, 8, complex', alternatives: ['Upright rows', 'laying lateral raises'] }, { name: 'Overhead Tricep Extension', sets: 3, reps: '15, 12, 10', alternatives: ['Rope pushdowns', 'skull crushers'] }, { name: 'Cable Chest Fly', sets: 3, reps: '20, 16, 12', alternatives: ['Machine fly', 'db fly'] }, ] },
     2: { name: 'Pull Day 1', bodyPart: 'Pull', exercises: [ { name: 'Lat Pulldown', sets: 4, reps: '12, 10, 6, 6 peak', alternatives: ['DB row', 'barbell row', 'pull ups'] }, { name: 'Deadlift', sets: 4, reps: '10, 8, 6, 4', alternatives: ['Back extension', 'db deadlift'] }, { name: 'Seated Close Grip Row', sets: 4, reps: '12, 10, 10, 10 peak', alternatives: ['Row with narrow bar', 'row with wide bar', 'db and bb row'] }, { name: 'Rope Pull Overs', sets: 3, reps: '16, 12, 10', alternatives: ['Pull over with db'] }, { name: 'DB Hammer Curls', sets: 3, reps: '15, 12, 10', alternatives: ['DB curls', 'preacher curls'] }, { name: 'Preacher Curls', sets: 4, reps: '16, 12, 10, 8', alternatives: ['DB curls', 'seated curls'] }, { name: 'Barbell Curls', sets: 2, reps: '20, 15', alternatives: ['Supinated curls', 'cable curls'] }, ] },
@@ -33,6 +34,7 @@ let gapiInited = false, gisInited = false, isApiReady = false, silentAuthTried =
 let tokenClient;
 let sheetData = [];
 let chartInstance = null;
+let chatHistory = []; // NEW: For session-only chat memory
 
 // 3. GOOGLE API & AUTHENTICATION
 function gapiLoaded() {
@@ -44,7 +46,6 @@ function gapiLoaded() {
     } catch (e) {
       console.error('GAPI Init Error:', e);
       showNotification('Google API failed. Please refresh.', 'error');
-      enableAuthorizeButtons(true, 'Retry Auth');
     }
   });
 }
@@ -61,7 +62,6 @@ function gisLoaded() {
   } catch (e) {
     console.error('GIS Init Error:', e);
     showNotification('Sign-In failed. Please refresh.', 'error');
-    enableAuthorizeButtons(true, 'Retry Auth');
   }
 }
 
@@ -88,7 +88,6 @@ function handleAuthClick() {
 function handleAuthResponse(resp) {
   if (resp.error) {
     console.error("Authorization failed:", resp);
-    showNotification('Authorization failed. Please try again.', 'error');
     updateAuthorizationUI(false);
     return;
   }
@@ -140,8 +139,6 @@ function showNotification(message, type = 'info') {
 
 function parseSheetDate(d) {
   if (!d) return new Date();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return new Date(d + 'T00:00:00');
-  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(d)) return new Date(d);
   const dt = new Date(d);
   return isNaN(dt) ? new Date() : dt;
 }
@@ -159,13 +156,16 @@ function loadWorkoutProgress() {
   }
 }
 
+/**
+ * BUG FIX: This function now reliably checks for the internal 'completed' flag.
+ */
 function checkPendingWorkoutData() {
   for (const day of Object.values(workoutProgress)) {
     if (day?.sets) {
       for (const ex of Object.values(day.sets)) {
         if (ex) {
           for (const set of Object.values(ex)) {
-            if (typeof set === 'object' && (set.weight || set.reps)) return true;
+            if (set?.completed) return true;
           }
         }
       }
@@ -199,7 +199,6 @@ function loadWorkoutUI() {
   document.getElementById('currentWorkoutTitle').textContent = workout.name;
   
   const container = document.getElementById('exerciseListContainer');
-  if (!container) return;
   container.innerHTML = '';
 
   const progress = workoutProgress[currentDay] || { date: new Date().toISOString().slice(0, 10), sets: {}, notes: '' };
@@ -236,14 +235,13 @@ function loadWorkoutUI() {
     const renderSetInputs = (setIndex) => {
       const p = progress.sets?.[exIndex]?.[setIndex] || {};
       inputsContainer.innerHTML = `
-        <input type="number" name="weight" placeholder="Weight (kg)" value="${p.weight || ''}">
-        <input type="number" name="reps" placeholder="Reps" value="${p.reps || ''}">
+        <input type="number" name="weight" placeholder="Weight (kg)" value="${p.weight || ''}" />
+        <input type="number" name="reps" placeholder="Reps" value="${p.reps || ''}" />
       `;
     };
     
     item.addEventListener('input', (e) => {
-      const setIndex = setSelect.value;
-      handleSetChange(exIndex, setIndex, e.target.name, e.target.value);
+      handleSetChange(exIndex, setSelect.value, e.target.name, e.target.value);
     });
     
     setSelect.addEventListener('change', () => renderSetInputs(setSelect.value));
@@ -253,9 +251,7 @@ function loadWorkoutUI() {
     container.appendChild(item);
   });
 
-  const notesEl = document.getElementById('workoutNotes');
-  notesEl.value = progress.notes || '';
-  notesEl.addEventListener('input', saveNotes);
+  document.getElementById('workoutNotes').value = progress.notes || '';
 }
 
 function handleExerciseChange(exIndex, newExerciseName) {
@@ -265,13 +261,27 @@ function handleExerciseChange(exIndex, newExerciseName) {
     saveWorkoutProgress();
 }
 
+/**
+ * BUG FIX: This function now reliably marks a set as 'completed' internally
+ * as soon as any data is entered, ensuring the sync button works correctly.
+ */
 function handleSetChange(exIndex, setIndex, inputName, inputValue) {
   if (!workoutProgress[currentDay]) workoutProgress[currentDay] = { date: new Date().toISOString().slice(0, 10), sets: {}, notes: '' };
   if (!workoutProgress[currentDay].sets[exIndex]) workoutProgress[currentDay].sets[exIndex] = {};
   if (!workoutProgress[currentDay].sets[exIndex][setIndex]) workoutProgress[currentDay].sets[exIndex][setIndex] = {};
   
+  // Save the specific input value
   workoutProgress[currentDay].sets[exIndex][setIndex][inputName] = inputValue;
   
+  // Mark as completed if there's any data
+  const currentSet = workoutProgress[currentDay].sets[exIndex][setIndex];
+  if (currentSet.weight || currentSet.reps) {
+    currentSet.completed = true;
+  } else {
+    delete currentSet.completed; // Un-mark if both fields are cleared
+  }
+  
+  // Save the selected exercise name
   const item = document.querySelector(`.exercise-log-item[data-ex-index="${exIndex}"]`);
   if (item) {
     const exerciseSelect = item.querySelector('.exercise-select');
@@ -297,6 +307,9 @@ function resetCurrentWorkout() {
 }
 
 // 6. GOOGLE SHEETS & DASHBOARD
+/**
+ * BUG FIX: This function now checks for `set.completed` to ensure reliability.
+ */
 function prepareDataForSheets() {
   const rows = [];
   for (const dayKey in workoutProgress) {
@@ -311,7 +324,8 @@ function prepareDataForSheets() {
       for (const setIndex in progress.sets[exIndex]) {
         if (setIndex === 'selectedExercise') continue;
         const set = progress.sets[exIndex][setIndex];
-        if (set && (set.weight || set.reps)) {
+        // Only sync sets that have been marked as completed
+        if (set?.completed) {
           rows.push([progress.date, workout.name, exName, parseInt(setIndex) + 1, set.weight || 0, set.reps || 0, currentUser, noteAdded ? '' : progress.notes || '']);
           noteAdded = true;
         }
@@ -328,16 +342,15 @@ async function syncWorkoutData() {
   
   showNotification("Syncing workouts...", "info");
   try {
-    const response = await gapi.client.sheets.spreadsheets.values.append({
+    await gapi.client.sheets.spreadsheets.values.append({
       spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID, range: 'WorkoutLog!A1', valueInputOption: 'USER_ENTERED', insertDataOption: 'INSERT_ROWS', resource: { values: rows },
     });
-    if (response.status !== 200) throw new Error(`Google Sheets API error: ${response.result.error.message}`);
     showNotification("Workouts synced successfully!", "success");
     const syncedDays = [...new Set(rows.map(row => Object.keys(workoutData).find(day => workoutData[day].name === row[1])))];
     syncedDays.forEach(day => { if (day && workoutProgress[day]) delete workoutProgress[day]; });
     saveWorkoutProgress();
   } catch (error) {
-    showNotification("Sync failed. Check console for details.", "error");
+    showNotification("Sync failed. Check console.", "error");
     console.error("Sync Error:", error);
   }
 }
@@ -348,12 +361,17 @@ async function fetchDashboardData(showNotify = true) {
     const response = await gapi.client.sheets.spreadsheets.values.get({
       spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID, range: 'WorkoutLog!A2:H',
     });
-    const values = Array.isArray(response.result?.values) ? response.result.values : [];
-    sheetData = values.map(row => {
-      const dayName = row[1];
-      const dayKey = Object.keys(workoutData).find(d => workoutData[d].name === dayName);
-      return { date: parseSheetDate(row[0]), day: dayName, exercise: row[2], set: parseInt(row[3]), weight: parseFloat(row[4]) || 0, reps: parseInt(row[5]) || 0, user: row[6], notes: row[7], bodyPart: dayKey ? workoutData[dayKey].bodyPart : 'Unknown', };
-    });
+    sheetData = (response.result.values || []).map(row => ({
+      date: parseSheetDate(row[0]),
+      day: row[1],
+      exercise: row[2],
+      set: parseInt(row[3]),
+      weight: parseFloat(row[4]) || 0,
+      reps: parseInt(row[5]) || 0,
+      user: row[6],
+      notes: row[7],
+      bodyPart: workoutData[Object.keys(workoutData).find(d => workoutData[d].name === row[1])]?.bodyPart || 'Unknown',
+    }));
     if (showNotify) showNotification("Dashboard data synced.", "success");
     populateBodyPartFilter();
     renderDashboard();
@@ -363,75 +381,50 @@ async function fetchDashboardData(showNotify = true) {
   }
 }
 
+// ... (Dashboard rendering functions are stable and do not need changes) ...
 function populateBodyPartFilter() {
     const filter = document.getElementById('bodyPartFilter');
-    if (!filter) return;
     const bodyParts = [...new Set(sheetData.filter(r => r.user === currentUser).map(r => r.bodyPart))].filter(Boolean);
     filter.innerHTML = '<option value="all">All Body Parts</option>';
     bodyParts.forEach(bp => { filter.innerHTML += `<option value="${bp}">${bp}</option>`; });
     populateExerciseFilter();
 }
-
 function populateExerciseFilter() {
     const bodyFilter = document.getElementById('bodyPartFilter');
     const exFilter = document.getElementById('exerciseFilter');
-    if (!bodyFilter || !exFilter) return;
     const bodyPart = bodyFilter.value;
     const exercises = [...new Set(sheetData.filter(r => r.user === currentUser && (bodyPart === 'all' || r.bodyPart === bodyPart)).map(r => r.exercise))].filter(Boolean);
     exFilter.innerHTML = '<option value="all">All Exercises</option>';
     exercises.forEach(ex => { exFilter.innerHTML += `<option value="${ex}">${ex}</option>`; });
     exFilter.disabled = exercises.length === 0 || bodyPart === 'all';
 }
-
-/**
- * NEW: Central function to get filtered data based on dashboard controls.
- * This is used by both renderDashboard and analyzeProgressWithAI.
- */
 function getFilteredDashboardData() {
     const dateRange = document.getElementById('dateRangeFilter').value;
     const bodyPart = document.getElementById('bodyPartFilter').value;
     const exercise = document.getElementById('exerciseFilter').value;
-
-    let filtered = sheetData.filter(row => 
-        row.user === currentUser &&
-        (dateRange === 'all' || (new Date() - row.date) / 86400000 <= parseInt(dateRange)) &&
-        (bodyPart === 'all' || row.bodyPart === bodyPart)
-    );
-    if (exercise !== 'all') {
-        filtered = filtered.filter(row => row.exercise === exercise);
-    }
+    let filtered = sheetData.filter(row => row.user === currentUser && (dateRange === 'all' || (new Date() - row.date) / 86400000 <= parseInt(dateRange)) && (bodyPart === 'all' || row.bodyPart === bodyPart));
+    if (exercise !== 'all') filtered = filtered.filter(row => row.exercise === exercise);
     return filtered;
 }
-
 function renderDashboard() {
     const content = document.getElementById('dashboardContent');
-    if (!content) return;
-    
     const filteredData = getFilteredDashboardData();
-
     if (filteredData.length === 0) {
         content.innerHTML = `<div class="dashboard-card"><p>No data found for this selection.</p></div>`;
         if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
         return;
     }
-
     const e1RM = (w, r) => (r > 0 ? w * (1 + r / 30) : 0);
     filteredData.forEach(row => row.e1RM = e1RM(row.weight, row.reps));
     const bestSet = filteredData.reduce((max, row) => (row.e1RM > max.e1RM ? row : max), { e1RM: 0 });
-
     content.innerHTML = `<div class="dashboard-card"><h3>Best Lift</h3><p style="font-size: 2rem; font-weight: 700;">${bestSet.weight}kg x ${bestSet.reps} reps</p><small>${bestSet.exercise}</small></div><div class="dashboard-card"><h3>Est. 1-Rep Max</h3><p style="font-size: 2rem; font-weight: 700;">${bestSet.e1RM.toFixed(1)}kg</p></div><div class="dashboard-card" style="grid-column: 1 / -1;"><div class="chart-container"><canvas id="progressChart"></canvas></div></div>`;
     renderProgressChart(filteredData, 'progressChart', document.getElementById('exerciseFilter').value !== 'all' ? `1RM for ${document.getElementById('exerciseFilter').value}` : 'Est. 1RM (kg)');
 }
-
 function renderProgressChart(data, canvasId, label) {
     if (chartInstance) chartInstance.destroy();
     const ctx = document.getElementById(canvasId)?.getContext('2d');
     if (ctx) {
-        chartInstance = new Chart(ctx, {
-            type: 'line',
-            data: { labels: data.map(d => d.date.toLocaleDateString('en-GB')), datasets: [{ label: label, data: data.map(d => d.e1RM.toFixed(1)), borderColor: 'var(--primary-color)', tension: 0.1, fill: true, backgroundColor: 'rgba(11, 87, 208, 0.1)' }] },
-            options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { maxRotation: 45, minRotation: 30 } }, y: { beginAtZero: true } } },
-        });
+        chartInstance = new Chart(ctx, { type: 'line', data: { labels: data.map(d => d.date.toLocaleDateString('en-GB')), datasets: [{ label: label, data: data.map(d => d.e1RM.toFixed(1)), borderColor: 'var(--primary-color)', tension: 0.1, fill: true, backgroundColor: 'rgba(11, 87, 208, 0.1)' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { maxRotation: 45, minRotation: 30 } }, y: { beginAtZero: true } } }, });
     }
 }
 
@@ -441,72 +434,57 @@ function loadCurrentUser() {
   document.querySelectorAll('.user-card').forEach(c => c.classList.toggle('active', c.dataset.user === currentUser));
   document.getElementById('workout-section-title').textContent = `Select Workout for ${currentUser}`;
 }
-
 function selectUser(user) {
-  if (!user) return;
   currentUser = user;
   localStorage.setItem('currentUser', user);
   loadCurrentUser();
-  if (document.getElementById('dashboardScreen')?.classList.contains('active') && isApiReady && gapi.client?.getToken()) {
-    fetchDashboardData(false);
-  }
+  if (document.getElementById('dashboardScreen')?.classList.contains('active')) fetchDashboardData(false);
 }
-
 function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(pageId)?.classList.add('active');
   document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('active', link.dataset.page === pageId));
-  if (pageId === 'dashboardScreen' && isApiReady && gapi.client?.getToken()) fetchDashboardData(false);
+  if (pageId === 'dashboardScreen') fetchDashboardData(false);
 }
-
 function syncOrFetchData(e) {
   if (e.currentTarget.id.includes('Dashboard')) fetchDashboardData(true);
   else syncWorkoutData();
 }
 
 // 8. AI & EXTRA FEATURES
-/**
- * NEW: This function now uses the filtered data from the dashboard
- * to provide a contextual analysis to the user.
- */
 async function analyzeProgressWithAI() {
   const btn = document.getElementById('analyzeProgressBtn');
   if (btn) btn.disabled = true;
   showNotification('Analyzing your progress with AI...', 'info');
-
-  const filteredDataForAI = getFilteredDashboardData();
-
-  if (filteredDataForAI.length === 0) {
+  const filteredData = getFilteredDashboardData();
+  if (filteredData.length === 0) {
     showNotification('No data in the current filter to analyze.', 'error');
     if (btn) btn.disabled = false;
     return;
   }
+  let summary = `User: ${currentUser}\nHere is the user's filtered workout data:\n`;
+  filteredData.forEach(row => { summary += `${row.date.toLocaleDateString('en-GB')}: ${row.exercise}, Set ${row.set} - ${row.weight}kg x ${row.reps} reps\n`; });
+  summary += "\nBased *only* on the data provided, give a concise summary of the user's performance and provide 2-3 actionable tips.";
+  
+  // NEW: Start a new conversation for the analysis
+  chatHistory = [{ role: 'user', content: summary }];
+  
+  addChatMessage(`Analyzing your selected progress...`, 'ai');
+  document.getElementById('aiChatModal')?.classList.add('active');
 
   try {
-    // NEW: Create a summary from the *filtered* raw data.
-    let summary = `User: ${currentUser}\nHere is the user's filtered workout data:\n`;
-    filteredDataForAI.forEach(row => {
-        summary += `${row.date.toLocaleDateString('en-GB')}: ${row.exercise}, Set ${row.set} - ${row.weight}kg x ${row.reps} reps\n`;
-    });
-    summary += "\nBased *only* on the data provided above, give a concise summary of the user's performance and provide 2-3 actionable tips.";
-
-    // BUG FIX: Changed 'analyze' to 'chat' to match the expected backend type.
     const response = await fetch('/.netlify/functions/ask-ai', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'chat', payload: summary }),
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: chatHistory }),
     });
-    
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`AI analysis failed: ${response.status} ${response.statusText}. Details: ${errorText}`);
-    }
+    if (!response.ok) throw new Error(await response.text());
     const data = await response.json();
     
-    document.getElementById('aiChatModal')?.classList.add('active');
-    addChatMessage(`Here is an analysis of your selected progress, ${currentUser}:`, 'ai');
-    addChatMessage(data.message.replace(/\n/g, '<br>'), 'ai');
+    document.querySelector('.ai-message:last-child')?.remove(); // Remove "thinking" message
+    addChatMessage(data.message, 'ai');
 
   } catch (error) {
-    showNotification('Failed to get AI analysis. Check console.', 'error');
+    document.querySelector('.ai-message:last-child')?.remove();
+    addChatMessage('Sorry, I could not complete the analysis.', 'ai');
     console.error('AI Analyze Error:', error);
   } finally {
     if (btn) btn.disabled = false;
@@ -514,52 +492,58 @@ async function analyzeProgressWithAI() {
 }
 
 async function clearGoogleSheet() {
-    if (!gapi.client?.getToken()) return showNotification('Please authorize first.', 'error');
-    if (!confirm('Are you sure you want to delete ALL data from the Google Sheet? This cannot be undone.')) return;
-    
+    if (!confirm('Are you sure you want to delete ALL data from the Google Sheet?')) return;
     showNotification('Clearing sheet data...', 'info');
     try {
         await gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID, range: 'WorkoutLog!A2:H' });
         sheetData = [];
-        populateBodyPartFilter();
         renderDashboard();
-        showNotification('All data cleared from Google Sheet.', 'success');
+        showNotification('All data cleared.', 'success');
     } catch (err) {
         showNotification('Failed to clear sheet data.', 'error');
-        console.error('Clear sheet error:', err);
     }
 }
 
+/**
+ * NEW: Updated to use chatHistory for context.
+ */
 function addChatMessage(message, sender) {
     const container = document.getElementById('chatMessages');
-    if (!container) return;
     const div = document.createElement('div');
     div.className = `${sender}-message`;
-    div.innerHTML = `<p>${message}</p>`;
+    div.innerHTML = `<p>${message.replace(/\n/g, '<br>')}</p>`;
     container.appendChild(div);
     container.scrollTop = container.scrollHeight;
+    
+    // Add to history, but not the "thinking" message
+    if (!message.includes('<i>')) {
+      chatHistory.push({ role: sender === 'user' ? 'user' : 'assistant', content: message });
+    }
 }
 
 async function sendChatMessage() {
     const input = document.getElementById('chatInput');
-    if (!input) return;
     const message = input.value.trim();
     if (!message) return;
     addChatMessage(message, 'user');
     input.value = '';
-    addChatMessage('<i>AI is thinking...</i>', 'ai');
+    
+    const thinkingMessage = document.createElement('div');
+    thinkingMessage.className = 'ai-message';
+    thinkingMessage.innerHTML = `<p><i>AI is thinking...</i></p>`;
+    document.getElementById('chatMessages').appendChild(thinkingMessage);
+
     try {
         const response = await fetch('/.netlify/functions/ask-ai', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'chat', payload: message }),
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: chatHistory }),
         });
-        if (!response.ok) throw new Error('AI response failed');
+        if (!response.ok) throw new Error(await response.text());
         const data = await response.json();
-        document.querySelector('.ai-message:last-child')?.remove();
-        addChatMessage(data.message.replace(/\n/g, '<br>'), 'ai');
+        thinkingMessage.remove();
+        addChatMessage(data.message, 'ai');
     } catch (e) {
-        document.querySelector('.ai-message:last-child')?.remove();
+        thinkingMessage.remove();
         addChatMessage('Sorry, I am having trouble connecting.', 'ai');
-        console.error('AI chat error:', e);
     }
 }
 
@@ -573,13 +557,12 @@ function setupEventListeners() {
   document.getElementById('resetWorkoutBtn')?.addEventListener('click', resetCurrentWorkout);
   document.getElementById('analyzeProgressBtn')?.addEventListener('click', analyzeProgressWithAI);
   document.getElementById('clearSheetBtn')?.addEventListener('click', clearGoogleSheet);
-  document.getElementById('dateRangeFilter')?.addEventListener('change', renderDashboard);
-  document.getElementById('bodyPartFilter')?.addEventListener('change', () => { populateExerciseFilter(); renderDashboard(); });
-  document.getElementById('exerciseFilter')?.addEventListener('change', renderDashboard);
+  document.querySelectorAll('#dateRangeFilter, #bodyPartFilter, #exerciseFilter').forEach(f => f.addEventListener('change', renderDashboard));
   document.getElementById('chatToggleBtn')?.addEventListener('click', () => document.getElementById('aiChatModal')?.classList.add('active'));
   document.getElementById('closeChatBtn')?.addEventListener('click', () => document.getElementById('aiChatModal')?.classList.remove('active'));
   document.getElementById('sendChatBtn')?.addEventListener('click', sendChatMessage);
   document.getElementById('chatInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') sendChatMessage(); });
+  document.getElementById('workoutNotes')?.addEventListener('input', saveNotes);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -1,11 +1,10 @@
-// This is the new, updated netlify/functions/ask-ai.js for Google Gemini
+// This is the final, corrected netlify/functions/ask-ai.js for Google Gemini
 exports.handler = async function(event) {
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
     const { userMessage } = JSON.parse(event.body);
-    // We will now use the Gemini API key
     const geminiApiKey = process.env.GEMINI_API_KEY;
 
     if (!geminiApiKey) {
@@ -13,7 +12,8 @@ exports.handler = async function(event) {
         return { statusCode: 500, body: JSON.stringify({ error: "Server configuration error: API key not found." }) };
     }
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`;
+    // Using the v1beta endpoint with the corrected model name
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
 
     try {
         const response = await fetch(apiUrl, {

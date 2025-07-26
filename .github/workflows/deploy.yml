@@ -31,12 +31,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v3 # Using stable v3
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v4 # FIX: Updated from v2/v3 to v4
+        uses: actions/upload-pages-artifact@v3 # FIX: Using stable v3 to avoid resolution error
         with:
           # Upload entire repository from the root directory
           path: '.'
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4 # FIX: Updated from v2 to v4
+        uses: actions/deploy-pages@v4 # This one is generally safe at v4

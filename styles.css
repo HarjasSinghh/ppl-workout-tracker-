@@ -1,10 +1,10 @@
-/* === FitTrack Pro: Fully Unified Responsive CSS (2025-07-27) ===
-   All workout sections, exercise/select inputs are visually uniform, inline, and never oversized.
-   All issues regarding odd box sizes, layout overflow, and misalignment are addressed.
-   Paste this as your styles.css file.
+/* === FitTrack Pro — Clean, Unified, Bug-Free CSS (July 2025) ===
+   - All workout sections, selection inputs, and navigation behave and look as intended.
+   - Only one main screen visible at a time. Uniform, tight, and mobile-friendly.
+   - Place this in styles.css. No overrides anywhere else.
 */
 
-/* ========== BASE & RESET ========== */
+/* ========== RESET, VARIABLES, BASE ========== */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 :root {
   --primary-color: #007aff;
@@ -24,51 +24,36 @@
   --floating-bottom-nav-height: 56px;
   --max-width: 900px;
 }
+*,
+*::before,
+*::after { box-sizing: border-box; margin: 0; padding: 0; }
+body, html { min-height: 100vh; height: 100%; overflow-x: hidden; background: var(--background-color); font-family: var(--font-family);}
+body { display: flex; flex-direction: column; min-height: 100vh; }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0; padding: 0;
-  word-break: break-word;
-  overflow-wrap: break-word;
-}
-html, body {
-  min-height: 100vh; height: 100%;
-  background: var(--background-color);
-  font-family: var(--font-family);
-}
-body {
-  display: flex; flex-direction: column;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-body, html { overflow-x: hidden; }
-.app-shell { display: flex; flex: 1 1 0; min-height: 0; }
-
-/* ========== SIDEBAR & BOTTOM NAV BAR ========== */
+/* ========== SIDEBAR & NAV ========== */
 .sidebar {
-  width: 220px; background: var(--surface-color); border-right: 1px solid var(--border-color);
-  padding: 23px 13px 0 13px; min-height: 100vh;
-  display: flex; flex-direction: column; gap: 16px; z-index: 1100;
+  width: 220px;
+  background: var(--surface-color);
+  border-right: 1px solid var(--border-color);
+  padding: 23px 13px 0 13px;
+  min-height: 100vh; display: flex; flex-direction: column; gap: 16px; z-index: 1100;
 }
-.logo { font-size: 2rem; font-weight: bold; color: var(--primary-color); margin-bottom: 22px;}
+.logo { font-size: 2rem; font-weight: bold; color: var(--primary-color); margin-bottom: 22px; }
 .nav-link {
   display: flex; align-items: center; gap: 14px;
-  color: var(--text-secondary); text-decoration: none;
-  font-weight: 500; font-size: 1.11rem;
-  border-radius: var(--radius);
-  padding: 10px 12px 10px 17px;
+  color: var(--text-secondary); text-decoration: none; font-weight: 500; font-size: 1.11rem;
+  border-radius: var(--radius); padding: 10px 12px 10px 17px;
   transition: background 0.13s, color 0.12s; margin-bottom: 2px;
 }
 .nav-link.active, .nav-link.selected, .nav-link:focus {
-  background: #eaf1fd; color: var(--primary-color);
-  box-shadow: 0 1px 14px rgba(0,120,255,0.05);
+  background: #eaf1fd; color: var(--primary-color); box-shadow: 0 1px 14px rgba(0,120,255,0.05);
 }
 .nav-link i { font-size: 1.23rem; }
-
 @media (max-width: 769px) {
   .sidebar {
     order: 2; width: 100vw; height: var(--floating-bottom-nav-height); min-height: 0;
-    flex-direction: row; justify-content: space-around; align-items: center; padding: 0; border-right: none;
+    flex-direction: row; justify-content: space-around;
+    align-items: center; padding: 0; border-right: none;
     border-top: 1px solid var(--border-color); border-bottom: none;
     position: fixed; bottom:0; left:0; z-index: 1100; background: var(--surface-color);
   }
@@ -77,11 +62,11 @@ body, html { overflow-x: hidden; }
   .nav-link i { font-size: 1.37rem;}
 }
 
-/* ========== MAIN CONTENT PADDING (NO HIDDEN CONTENT) ========== */
+/* ========== PAGE CONTAINER, SCREEN RULES ========== */
+.app-shell { display: flex; flex: 1 1 0; min-height: 0; }
 .main-content {
-  flex: 1; min-width: 0; min-height: 0; position: relative; display: flex; flex-direction: column;
+  flex: 1; min-width: 0; min-height: 0; position: relative; display: block;
   padding-bottom: 210px !important;
-  min-height: 0;
   height: auto;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -92,27 +77,17 @@ body, html { overflow-x: hidden; }
   }
 }
 
-/* ========== PAGE HEADER, USER SELECTOR ========== */
+/* ========== PAGE SHOW/HIDE LOGIC ========== */
+.page { display: none; max-width: var(--max-width); margin: 0 auto; padding: 26px 16px 18px 16px; min-height: 88vh; }
+.page.active { display: block; }
+
+/* ========== GLOBAL CONTENT STRUCTURE ========== */
 .page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 15px;
-  margin-bottom: 22px;
-  flex-wrap: wrap;
-  padding: 0 16px;
-  max-width: var(--max-width);
-  margin-left: auto;
-  margin-right: auto;
-  box-sizing: border-box;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 15px; margin-bottom: 22px; flex-wrap: wrap; padding: 0 16px; max-width: var(--max-width);
+  margin-left: auto; margin-right: auto; box-sizing: border-box;
 }
-.page-header > div {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  flex: 1 1 auto;
-}
+.page-header > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 auto; }
 .page-header h1 { font-size: 2.12rem; font-weight: 700; line-height: 1.18; margin: 0;}
 .page-header p { color: var(--text-secondary); font-size: 1.11rem; margin-top: 2px; margin-bottom: 0;}
 .header-actions {
@@ -134,23 +109,15 @@ body, html { overflow-x: hidden; }
   .header-actions { width: 100%; min-width: 0; justify-content: center;}
   .header-actions button { width: 100%; margin-bottom: 4px;}
 }
-
-/* User selector - keep horizontal, wrap on mobile */
 .user-selector {
-  display: flex;
-  gap: 13px;
-  margin-bottom: 18px;
-  padding: 0 16px;
-  max-width: var(--max-width);
-  margin-left: auto;
-  margin-right: auto;
-  box-sizing: border-box;
+  display: flex; gap: 13px; margin-bottom: 18px; padding: 0 16px;
+  max-width: var(--max-width); margin-left: auto; margin-right: auto; box-sizing: border-box;
   flex-wrap: wrap;
 }
 .user-card {
   background: #f4f7fa; border-radius: var(--radius); padding: 10px 18px; cursor: pointer; border: 2px solid transparent;
-  transition: background 0.12s, border-color 0.12s;
-  font-weight: 600; font-size: 1.05rem; color: #34383e; display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s; font-weight: 600; font-size: 1.05rem; color: #34383e;
+  display: flex; align-items: center; gap: 8px; white-space: nowrap;
 }
 .user-card.active, .user-card.selected {
   border-color: var(--primary-color); color: var(--primary-color);
@@ -174,96 +141,38 @@ body, html { overflow-x: hidden; }
   .workout-grid { grid-template-columns: 1fr; gap: 13px;}
 }
 
-/* ========== EXERCISE LOG CARDS ========== */
+/* ========== EXERCISE LOG CARDS & INPUTS: UNIFORM, INLINE, RESPONSIVE ========== */
 .workout-log-container { display: flex; flex-direction: column; gap: 23px; padding-bottom: 12vw; }
 .exercise-log-item {
-  background: var(--surface-color);
-  border-radius: var(--radius);
-  box-shadow: 0 4px 20px rgba(0,24,70,0.05);
-  border: 1.2px solid var(--border-color);
-  padding: 12px 8px 10px 8px; /* Tighter */
-  margin-bottom: 0; margin-top: 14px;
-  min-width: 0; position: relative; overflow-wrap: break-word;
+  background: var(--surface-color); border-radius: var(--radius); box-shadow: 0 4px 20px rgba(0,24,70,0.05);
+  border: 1.2px solid var(--border-color); padding: 12px 8px 10px 8px;
+  margin-bottom: 0; margin-top: 14px; min-width: 0; position: relative; overflow-wrap: break-word;
 }
-
-/* -- FLEX, INLINE, UNIFORM SELECT/INPUTS -- */
 .exercise-log-header,
 .set-inputs {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  row-gap: 6px;
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 10px; min-width: 0; row-gap: 6px;
 }
-
 .exercise-log-header select,
 .exercise-log-header .exercise-select,
 .set-select,
 .set-inputs input[type="number"] {
-  padding: 6px 12px;           /* Tighter vertical & horizontal padding */
-  font-size: 1rem;
-  font-weight: 500;
-  min-height: 38px;
-  height: 38px;
-  line-height: 1.17;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background: var(--input-bg-color);
-  box-sizing: border-box;
-  max-width: 100%;
-  min-width: 0;
-  color: var(--text-primary);
-  outline: none;
-  margin: 0;
+  padding: 6px 12px; font-size: 1rem; font-weight: 500;
+  min-height: 38px; height: 38px; line-height: 1.17; border-radius: 8px;
+  border: 1px solid var(--border-color); background: var(--input-bg-color);
+  box-sizing: border-box; max-width: 100%; min-width: 0; color: var(--text-primary);
+  outline: none; margin: 0;
 }
-
-/* Consistent width logic for different fields */
-.set-select {
-  min-width: 75px;
-  width: 75px;
-  max-width: 120px;
-}
-
+.set-select { min-width: 75px; width: 75px; max-width: 120px; }
 .exercise-log-header select,
-.exercise-log-header .exercise-select {
-  flex: 1 1 150px;
-  min-width: 80px;
-  max-width: 220px;
-}
-.set-inputs input[type="number"] {
-  width: 58px;
-  max-width: 85px;
-  text-align: center;
-}
-.set-inputs input[type="number"]:focus {
-  border-color: var(--primary-color);
-}
-.set-select:focus, .exercise-log-header select:focus, .exercise-log-header .exercise-select:focus {
-  border-color: var(--primary-color);
-}
-
-/* Responsive smart shrinking for even smaller screens */
+.exercise-log-header .exercise-select { flex: 1 1 150px; min-width: 80px; max-width: 220px; }
+.set-inputs input[type="number"] { width: 58px; max-width: 85px; text-align: center; }
+.set-inputs input[type="number"]:focus { border-color: var(--primary-color);}
+.set-select:focus, .exercise-log-header select:focus, .exercise-log-header .exercise-select:focus { border-color: var(--primary-color);}
 @media (max-width: 600px) {
-  .exercise-log-header, .set-inputs {
-    flex-direction: row;
-    gap: 6px;
-    align-items: center;
-  }
-  .exercise-log-header select,
-  .exercise-log-header .exercise-select {
-    font-size: 0.97rem;
-    min-width: 68px;
-    max-width: 120px;
-  }
-  .set-inputs input[type="number"], .set-select {
-    font-size: 0.97rem;
-    width: 46px;
-    min-width: 40px;
-    max-width: 70px;
-    height: 32px;
-    padding: 4px 7px;
-  }
+  .exercise-log-header, .set-inputs { flex-direction: row; gap: 6px; align-items: center; }
+  .exercise-log-header select, .exercise-log-header .exercise-select { font-size: 0.97rem; min-width: 68px; max-width: 120px; }
+  .set-inputs input[type="number"], .set-select { font-size: 0.97rem; width: 46px; min-width: 40px; max-width: 70px; height: 32px; padding: 4px 7px; }
   .exercise-log-item { padding: 8px 3px 6px 5px; }
 }
 @media (max-width: 420px) {
@@ -272,17 +181,14 @@ body, html { overflow-x: hidden; }
     width: 100%; min-width: 0; max-width: 100%;
   }
 }
-
-/* Unify card content with zero overflow */
 .exercise-log-item[data-ex-index] { min-width: 0; overflow-wrap: break-word; }
 
-/* ========== WORKOUT NOTES (VISIBILITY, NO OVERLAP) ========== */
+/* ========== WORKOUT NOTES (ALWAYS VISIBLE) ========== */
 .notes-section {
   margin-top: 19px;
   padding: 14px 11px 18px 12px;
   background: var(--surface-color); border-radius: var(--radius); border: 1.2px solid var(--border-color);
-  box-shadow: 0 3px 14px rgba(24,34,52,0.07);
-  margin-bottom: 70px; /* enough for floaters/nav on desktop */
+  box-shadow: 0 3px 14px rgba(24,34,52,0.07); margin-bottom: 70px;
   display: flex; flex-direction: column; gap: 8px; position: relative; z-index: 1150;
 }
 @media (max-width: 769px) {
@@ -290,27 +196,20 @@ body, html { overflow-x: hidden; }
 }
 .notes-section h3 { color: var(--primary-color); font-size: 1.11rem; font-weight: 700; margin-bottom: 8px;}
 #workoutNotes {
-  width: 100%; min-height: 63px;
-  padding: 9px 10px; border-radius: 8px;
-  background: var(--input-bg-color); font-size: 1.04rem; font-weight: 500; border: 1.1px solid var(--border-color); outline: none; margin-top: 2px; resize: vertical;
-  max-height: 25vh; overflow-y: auto; font-family: var(--font-family); line-height: 1.3; transition: max-height 0.15s ease-in-out;
+  width: 100%; min-height: 63px; padding: 9px 10px; border-radius: 8px;
+  background: var(--input-bg-color); font-size: 1.04rem; font-weight: 500;
+  border: 1.1px solid var(--border-color); outline: none; margin-top: 2px; resize: vertical;
+  max-height: 25vh; overflow-y: auto; font-family: var(--font-family); line-height: 1.3; transition: max-height 0.15s;
 }
 #workoutNotes:focus { max-height: 40vh; outline: 2px solid var(--primary-color); }
 
-/* ========== DASHBOARD BUTTON GRID & FILTERS ========== */
+/* ========== DASHBOARD BUTTON/GRID/FILTERS ========== */
 .dashboard-actions-grid {
-  display: grid;
-  gap: 11px;
-  margin-bottom: 20px;
-  background: transparent;
-  align-items: center;
+  display: grid; gap: 11px; margin-bottom: 20px;
+  background: transparent; align-items: center;
 }
-@media (min-width: 601px) {
-  .dashboard-actions-grid { grid-template-columns: repeat(4, 1fr); }
-}
-@media (max-width:600px) {
-  .dashboard-actions-grid { grid-template-columns:repeat(2, 1fr);}
-}
+@media (min-width: 601px) { .dashboard-actions-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width:600px) { .dashboard-actions-grid { grid-template-columns:repeat(2, 1fr); } }
 .dashboard-actions-grid button {
   display: flex; align-items: center; justify-content: center; gap: 7px;
   font-weight: 600; font-size: 1.08rem; padding: 13px 0;
@@ -318,18 +217,10 @@ body, html { overflow-x: hidden; }
   transition: background-color 0.13s, color 0.13s;
   background: var(--surface-color); color: var(--primary-color); cursor: pointer;
 }
-.dashboard-actions-grid button.primary-btn {
-  background: var(--primary-color); color: #fff; border-color: var(--primary-color);
-}
-.dashboard-actions-grid button.secondary-btn {
-  background: #eaf3ff; color: var(--primary-color); border-color: var(--primary-color);
-}
-.dashboard-actions-grid button.danger-btn {
-  background: var(--danger-color); color: #fff; border-color: var(--danger-color);
-}
-.dashboard-actions-grid button:focus, .dashboard-actions-grid button:hover {
-  outline: 2px solid var(--primary-color); outline-offset: 2px;
-}
+.dashboard-actions-grid button.primary-btn { background: var(--primary-color); color: #fff; border-color: var(--primary-color);}
+.dashboard-actions-grid button.secondary-btn { background: #eaf3ff; color: var(--primary-color); border-color: var(--primary-color);}
+.dashboard-actions-grid button.danger-btn { background: var(--danger-color); color: #fff; border-color: var(--danger-color);}
+.dashboard-actions-grid button:focus, .dashboard-actions-grid button:hover { outline: 2px solid var(--primary-color); outline-offset: 2px; }
 .dashboard-controls {
   margin-bottom: 13px; background: var(--surface-color); border-radius: var(--radius); border: 1.1px solid var(--border-color);
   padding: 13px 10px 7px 10px; display: flex; flex-wrap: wrap; gap: 11px 13px;
@@ -341,16 +232,13 @@ body, html { overflow-x: hidden; }
 }
 .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: 13px;}
 .dashboard-card { background: var(--surface-color); border-radius: var(--radius); padding: 17px 13px; min-height: 60px; border: 1.1px solid var(--border-color); box-shadow: var(--shadow);}
-.chart-container { height: 200px; margin-top: 9px;}
+.chart-container { height: 200px; margin-top: 9px; }
 
-/* ========== FLOATING BUTTONS ========== */
-#chatToggleBtn,
-#globalSyncBtn {
+/* ========== FLOATING BUTTONS: ALWAYS VISIBLE, NEVER OVERLAP ========== */
+#chatToggleBtn, #globalSyncBtn {
   position: fixed;
-  width: var(--floating-btn-size);
-  height: var(--floating-btn-size);
-  border-radius: 50%;
-  box-shadow: 0 6px 18px rgba(0,50,140,0.08);
+  width: var(--floating-btn-size); height: var(--floating-btn-size);
+  border-radius: 50%; box-shadow: 0 6px 18px rgba(0,50,140,0.08);
   display: flex; align-items: center; justify-content: center;
   color: #fff; font-size: 1.5rem; border: none; cursor: pointer; z-index: 1200;
   transition: background 0.15s, transform 0.13s, bottom 0.17s;
@@ -366,7 +254,7 @@ body, html { overflow-x: hidden; }
   bottom: calc(var(--floating-bottom-nav-height) + var(--floating-btn-size) + var(--floating-gap));
 }
 .floating-btn:active, .floating-btn:hover { opacity: 0.97; transform: scale(1.07);}
-.floating-btn.hidden { display:none !important; }
+.floating-btn.hidden { display: none !important; }
 @media (max-width: 769px) {
   #chatToggleBtn { bottom: var(--floating-bottom-nav-height); }
   #globalSyncBtn { bottom: calc(var(--floating-bottom-nav-height) + var(--floating-btn-size) + var(--floating-gap)); }
@@ -387,16 +275,14 @@ body, html { overflow-x: hidden; }
 .chat-input-container { display: flex; gap: 7px; padding: 11px; border-top: 1px solid var(--border-color); background: #f7f8fb;}
 #chatInput { flex: 1; padding: 7px 13px; border-radius: 14px; border: 1px solid var(--border-color); background: #f5f6fa; }
 
-/* ========== NOTIFICATION ========== */
+/* ========== NOTIFICATIONS ========== */
 .notification { position: fixed; top: 17px; left: 50%; padding: 13px 21px; min-width: 120px; border-radius: 10px; font-weight: 600; font-size: 1.06rem; background: var(--primary-color); color: #fff; box-shadow: var(--shadow); z-index: 3000; opacity: 0; pointer-events: none; transform: translateX(-50%) scale(0.98); transition: opacity 0.23s, transform 0.14s;}
 .notification.success { background: var(--success-color);}
 .notification.error { background: var(--danger-color);}
 body > .notification { opacity: 1; pointer-events: all; transform: translateX(-50%) scale(1); }
 
-/* ========== INPUT SPINNERS ========== */
+/* ========== INPUT SPINNERS & FOCUS ========== */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
-
-/* ========== ACCESSIBILITY: FOCUS OUTLINE ========== */
 :focus { outline-color: var(--primary-color); }

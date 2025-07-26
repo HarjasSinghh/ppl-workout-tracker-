@@ -25,10 +25,7 @@
             <!-- Home Screen -->
             <div id="homeScreen" class="page active">
                 <header class="page-header">
-                    <div>
-                        <h1>Welcome Back</h1>
-                        <p>Ready to crush your next session?</p>
-                    </div>
+                    <div><h1>Welcome Back</h1><p>Ready to crush your next session?</p></div>
                 </header>
                 <div class="workout-grid">
                     <div class="day-card" data-day="1"><i class="fas fa-fire"></i><h3>Push Day 1</h3><p>Chest, Shoulders</p></div>
@@ -44,11 +41,12 @@
             <div id="workoutScreen" class="page">
                 <header class="page-header">
                     <div>
-                        <button id="backToHomeBtn" class="icon-btn"><i class="fas fa-arrow-left"></i> Back to Home</button>
+                        <button id="backToHomeBtn" class="icon-btn"><i class="fas fa-arrow-left"></i> Back</button>
                         <h1 id="currentWorkoutTitle"></h1>
                     </div>
                     <div id="authContainer" class="auth-container">
-                         <button id="authorizeBtn" class="primary-btn" style="visibility: hidden;">Authorize Google</button>
+                         <button id="resetWorkoutBtn" class="secondary-btn" style="display: none;">Reset</button>
+                         <button id="authorizeBtn" class="primary-btn" style="visibility: hidden;">Authorize</button>
                          <button id="syncDataBtn" class="primary-btn" style="display: none;">Sync Workout</button>
                     </div>
                 </header>
@@ -59,19 +57,14 @@
             <div id="dashboardScreen" class="page">
                 <header class="page-header">
                     <div><h1>Your Dashboard</h1><p>Analyze your progress and get insights.</p></div>
-                    <button id="refreshDataBtn" class="primary-btn"><i class="fas fa-sync-alt"></i> Refresh Data</button>
+                    <div class="header-actions">
+                        <button id="refreshDataBtn" class="primary-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
+                        <button id="clearSheetBtn" class="danger-btn"><i class="fas fa-trash-alt"></i> Clear All Data</button>
+                    </div>
                 </header>
                 <div class="dashboard-controls">
-                    <!-- Date Range Filter -->
-                    <div class="date-filter-group">
-                        <label for="startDateFilter">Start Date:</label>
-                        <input type="date" id="startDateFilter" class="date-filter">
-                    </div>
-                    <div class="date-filter-group">
-                        <label for="endDateFilter">End Date:</label>
-                        <input type="date" id="endDateFilter" class="date-filter">
-                    </div>
-                    <!-- Body Part and Exercise Filters -->
+                    <div class="date-filter-group"><label for="startDateFilter">Start Date:</label><input type="date" id="startDateFilter" class="date-filter"></div>
+                    <div class="date-filter-group"><label for="endDateFilter">End Date:</label><input type="date" id="endDateFilter" class="date-filter"></div>
                     <select id="bodyPartFilter" class="dropdown-filter"><option value="all">All Body Parts</option></select>
                     <select id="exerciseFilter" class="dropdown-filter" disabled><option value="all">All Exercises</option></select>
                 </div>

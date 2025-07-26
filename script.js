@@ -2,7 +2,7 @@
 
 /**
  * ===================================================================
- * FitTrack Pro - Main Application Script v4.0 (Final Stable Build)
+ * FitTrack Pro - Main Application Script v5.0 (Contextual AI)
  * ===================================================================
  */
 
@@ -165,10 +165,7 @@ function checkPendingWorkoutData() {
       for (const ex of Object.values(day.sets)) {
         if (ex) {
           for (const set of Object.values(ex)) {
-            // A set is considered pending if it has a weight or reps value.
-            if (typeof set === 'object' && (set.weight || set.reps)) {
-              return true;
-            }
+            if (typeof set === 'object' && (set.weight || set.reps)) return true;
           }
         }
       }
@@ -177,7 +174,7 @@ function checkPendingWorkoutData() {
   return false;
 }
 
-// 5. UI RENDERING & WORKOUT LOGIC (NEW COMPACT UI)
+// 5. UI RENDERING & WORKOUT LOGIC
 function renderHome() {
   const grid = document.getElementById('workoutGrid');
   if (!grid) return;
@@ -244,25 +241,21 @@ function loadWorkoutUI() {
       `;
     };
     
-    // Use event delegation on the container for performance and reliability
     item.addEventListener('input', (e) => {
       const setIndex = setSelect.value;
       handleSetChange(exIndex, setIndex, e.target.name, e.target.value);
     });
     
-    setSelect.addEventListener('change', () => {
-      renderSetInputs(setSelect.value);
-    });
-    
-    exerciseSelect.addEventListener('change', () => {
-      handleExerciseChange(exIndex, exerciseSelect.value);
-    });
+    setSelect.addEventListener('change', () => renderSetInputs(setSelect.value));
+    exerciseSelect.addEventListener('change', () => handleExerciseChange(exIndex, exerciseSelect.value));
 
-    renderSetInputs(0); // Initial render for the first set
+    renderSetInputs(0);
     container.appendChild(item);
   });
 
-  document.getElementById('workoutNotes').value = progress.notes || '';
+  const notesEl = document.getElementById('workoutNotes');
+  notesEl.value = progress.notes || '';
+  notesEl.addEventListener('input', saveNotes);
 }
 
 function handleExerciseChange(exIndex, newExerciseName) {
@@ -277,10 +270,8 @@ function handleSetChange(exIndex, setIndex, inputName, inputValue) {
   if (!workoutProgress[currentDay].sets[exIndex]) workoutProgress[currentDay].sets[exIndex] = {};
   if (!workoutProgress[currentDay].sets[exIndex][setIndex]) workoutProgress[currentDay].sets[exIndex][setIndex] = {};
   
-  // Save the specific input value (weight or reps)
   workoutProgress[currentDay].sets[exIndex][setIndex][inputName] = inputValue;
   
-  // Ensure the selected exercise name is also saved
   const item = document.querySelector(`.exercise-log-item[data-ex-index="${exIndex}"]`);
   if (item) {
     const exerciseSelect = item.querySelector('.exercise-select');
@@ -305,7 +296,7 @@ function resetCurrentWorkout() {
   }
 }
 
-// 6. GOOGLE SHEETS INTEGRATION
+// 6. GOOGLE SHEETS & DASHBOARD
 function prepareDataForSheets() {
   const rows = [];
   for (const dayKey in workoutProgress) {
@@ -320,7 +311,6 @@ function prepareDataForSheets() {
       for (const setIndex in progress.sets[exIndex]) {
         if (setIndex === 'selectedExercise') continue;
         const set = progress.sets[exIndex][setIndex];
-        // A set is ready to sync if it has a value for weight or reps.
         if (set && (set.weight || set.reps)) {
           rows.push([progress.date, workout.name, exName, parseInt(setIndex) + 1, set.weight || 0, set.reps || 0, currentUser, noteAdded ? '' : progress.notes || '']);
           noteAdded = true;
@@ -393,27 +383,44 @@ function populateExerciseFilter() {
     exFilter.disabled = exercises.length === 0 || bodyPart === 'all';
 }
 
-function renderDashboard() {
-    const content = document.getElementById('dashboardContent');
-    if (!content) return;
+/**
+ * NEW: Central function to get filtered data based on dashboard controls.
+ * This is used by both renderDashboard and analyzeProgressWithAI.
+ */
+function getFilteredDashboardData() {
     const dateRange = document.getElementById('dateRangeFilter').value;
     const bodyPart = document.getElementById('bodyPartFilter').value;
     const exercise = document.getElementById('exerciseFilter').value;
 
-    let filtered = sheetData.filter(row => row.user === currentUser && (dateRange === 'all' || (new Date() - row.date) / 86400000 <= parseInt(dateRange)) && (bodyPart === 'all' || row.bodyPart === bodyPart));
-    if (exercise !== 'all') filtered = filtered.filter(row => row.exercise === exercise);
+    let filtered = sheetData.filter(row => 
+        row.user === currentUser &&
+        (dateRange === 'all' || (new Date() - row.date) / 86400000 <= parseInt(dateRange)) &&
+        (bodyPart === 'all' || row.bodyPart === bodyPart)
+    );
+    if (exercise !== 'all') {
+        filtered = filtered.filter(row => row.exercise === exercise);
+    }
+    return filtered;
+}
 
-    if (filtered.length === 0) {
+function renderDashboard() {
+    const content = document.getElementById('dashboardContent');
+    if (!content) return;
+    
+    const filteredData = getFilteredDashboardData();
+
+    if (filteredData.length === 0) {
         content.innerHTML = `<div class="dashboard-card"><p>No data found for this selection.</p></div>`;
         if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
         return;
     }
+
     const e1RM = (w, r) => (r > 0 ? w * (1 + r / 30) : 0);
-    filtered.forEach(row => row.e1RM = e1RM(row.weight, row.reps));
-    const bestSet = filtered.reduce((max, row) => (row.e1RM > max.e1RM ? row : max), { e1RM: 0 });
+    filteredData.forEach(row => row.e1RM = e1RM(row.weight, row.reps));
+    const bestSet = filteredData.reduce((max, row) => (row.e1RM > max.e1RM ? row : max), { e1RM: 0 });
 
     content.innerHTML = `<div class="dashboard-card"><h3>Best Lift</h3><p style="font-size: 2rem; font-weight: 700;">${bestSet.weight}kg x ${bestSet.reps} reps</p><small>${bestSet.exercise}</small></div><div class="dashboard-card"><h3>Est. 1-Rep Max</h3><p style="font-size: 2rem; font-weight: 700;">${bestSet.e1RM.toFixed(1)}kg</p></div><div class="dashboard-card" style="grid-column: 1 / -1;"><div class="chart-container"><canvas id="progressChart"></canvas></div></div>`;
-    renderProgressChart(filtered, 'progressChart', exercise !== 'all' ? `1RM for ${exercise}` : 'Est. 1RM (kg)');
+    renderProgressChart(filteredData, 'progressChart', document.getElementById('exerciseFilter').value !== 'all' ? `1RM for ${document.getElementById('exerciseFilter').value}` : 'Est. 1RM (kg)');
 }
 
 function renderProgressChart(data, canvasId, label) {
@@ -458,36 +465,32 @@ function syncOrFetchData(e) {
 }
 
 // 8. AI & EXTRA FEATURES
+/**
+ * NEW: This function now uses the filtered data from the dashboard
+ * to provide a contextual analysis to the user.
+ */
 async function analyzeProgressWithAI() {
   const btn = document.getElementById('analyzeProgressBtn');
   if (btn) btn.disabled = true;
   showNotification('Analyzing your progress with AI...', 'info');
 
-  if (!sheetData || sheetData.length === 0) {
-    showNotification('No workout data available to analyze.', 'error');
+  const filteredDataForAI = getFilteredDashboardData();
+
+  if (filteredDataForAI.length === 0) {
+    showNotification('No data in the current filter to analyze.', 'error');
     if (btn) btn.disabled = false;
     return;
   }
 
   try {
-    let summary = `User: ${currentUser}\nWorkout sessions logged: ${sheetData.length}\n\nBest lifts:\n`;
-    const e1RM = (w, r) => (r > 0 ? w * (1 + r / 30) : 0);
-    const bestLifts = {};
-    sheetData.forEach(row => {
-      if (row.user !== currentUser) return;
-      const key = `${row.bodyPart} - ${row.exercise}`;
-      const currentBest = bestLifts[key];
-      const currentE1RM = e1RM(row.weight, row.reps);
-      if (!currentBest || currentE1RM > currentBest.e1RM) {
-        bestLifts[key] = { weight: row.weight, reps: row.reps, e1RM: currentE1RM, date: row.date.toLocaleDateString('en-GB') };
-      }
+    // NEW: Create a summary from the *filtered* raw data.
+    let summary = `User: ${currentUser}\nHere is the user's filtered workout data:\n`;
+    filteredDataForAI.forEach(row => {
+        summary += `${row.date.toLocaleDateString('en-GB')}: ${row.exercise}, Set ${row.set} - ${row.weight}kg x ${row.reps} reps\n`;
     });
-    for (const [key, val] of Object.entries(bestLifts)) {
-      summary += `${key}: ${val.weight}kg x ${val.reps} reps (1RM est: ${val.e1RM.toFixed(1)}kg) on ${val.date}\n`;
-    }
-    summary += "\nProvide a friendly, insightful summary of this user's fitness progress and 2-3 actionable training tips based on this data.";
+    summary += "\nBased *only* on the data provided above, give a concise summary of the user's performance and provide 2-3 actionable tips.";
 
-    // *** BUG FIX: Changed 'analyze' to 'chat' to match the expected backend type. ***
+    // BUG FIX: Changed 'analyze' to 'chat' to match the expected backend type.
     const response = await fetch('/.netlify/functions/ask-ai', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'chat', payload: summary }),
     });
@@ -499,7 +502,7 @@ async function analyzeProgressWithAI() {
     const data = await response.json();
     
     document.getElementById('aiChatModal')?.classList.add('active');
-    addChatMessage(`Here is an analysis of your progress, ${currentUser}:`, 'ai');
+    addChatMessage(`Here is an analysis of your selected progress, ${currentUser}:`, 'ai');
     addChatMessage(data.message.replace(/\n/g, '<br>'), 'ai');
 
   } catch (error) {

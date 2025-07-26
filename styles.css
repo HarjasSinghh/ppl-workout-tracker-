@@ -1,157 +1,292 @@
-/*
- * ===================================================================
- *  FitTrack Pro - The Definitive Mobile-First Build
- *  Description: A complete CSS overhaul engineered for flawless
- *  performance on mobile (Safari/Chrome) and desktop.
- * ===================================================================
- */
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
   --primary-color: #007aff;
   --background-color: #f7f8fa;
-  --surface-color: #ffffff;
+  --surface-color: #fff;
   --text-primary: #1d1d1f;
-  --text-secondary: #6e6e73;
-  --border-color: #e4e4e6;
-  --input-bg-color: #f0f1f3;
+  --text-secondary: #6c6e73;
+  --border-color: #e5e5e7;
+  --input-bg-color: #f6f7fa;
   --danger-color: #ff3b30;
   --success-color: #34c759;
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
   --radius: 12px;
-  --transition: 0.2s ease-in-out;
+  --transition: 0.17s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* { box-sizing: border-box; }
 
-/**
- * ===================================================================
- *  **FIX 1: ROBUST VIEWPORT & SCROLLING**
- *  This ensures the app uses the correct screen height on mobile
- *  browsers like Safari, fixing the broken scrolling.
- * ===================================================================
- */
-html {
+html, body {
+  min-height: 100vh;
   height: 100%;
-  height: -webkit-fill-available; /* Critical for iOS Safari */
-}
-
-body {
+  background: var(--background-color);
   font-family: var(--font-family);
-  background-color: var(--background-color);
   color: var(--text-primary);
-  height: 100%;
-  height: -webkit-fill-available;
-  display: flex; /* Use flexbox for the core layout */
-  flex-direction: column;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
 .app-shell {
   display: flex;
-  flex: 1; /* Allow shell to grow and fill body */
-  min-height: 0; /* Prevents flexbox overflow issues */
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 .main-content {
   flex-grow: 1;
-  overflow-y: auto; /* All scrolling is handled here */
+  overflow-y: auto;
+  background: var(--background-color);
+  min-height: 0;
 }
 
-.page { display: none; padding: 28px; }
-.page.active { display: block; animation: fadeIn 0.3s var(--transition); }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.page {
+  display: none;
+  padding: 32px 24px 24px 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.page.active { display: block; }
 
-/* --- Sidebar (Desktop) --- */
+/* SIDEBAR (mobile nav at bottom) */
 .sidebar {
-  width: 240px;
-  background-color: var(--surface-color);
+  width: 220px;
+  background: var(--surface-color);
   border-right: 1px solid var(--border-color);
-  padding: 24px 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  flex-shrink: 0; /* Prevent sidebar from shrinking */
+  gap: 16px;
+  padding: 24px 12px 24px 12px;
+  min-height: 100vh;
 }
-.logo { font-size: 2rem; font-weight: 700; color: var(--primary-color); padding: 0 8px; margin-bottom: 24px; }
-.nav-link { display: flex; align-items: center; gap: 16px; color: var(--text-secondary); text-decoration: none; padding: 12px; border-radius: var(--radius); transition: var(--transition); cursor: pointer; font-weight: 500; }
-.nav-link i { font-size: 1.25rem; width: 24px; text-align: center; }
-.nav-link.active, .nav-link:hover { color: var(--primary-color); background-color: var(--background-color); }
+.logo { font-size: 2rem; font-weight: bold; color: var(--primary-color); margin-bottom: 24px; }
+.nav-link { display: flex; align-items: center; gap: 14px; color: var(--text-secondary); text-decoration: none; font-weight: 500; border-radius: var(--radius); padding: 10px 12px; transition: var(--transition); }
+.nav-link.active, .nav-link:hover { background: #f1f3f5; color: var(--primary-color); }
 
-/* --- Page Header & Controls --- */
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; gap: 16px; flex-wrap: wrap; }
-.page-header h1 { font-size: 2rem; font-weight: 700; }
-.header-actions { display: flex; align-items: center; gap: 12px; }
+/* HEADER/CONTROLS */
+.page-header {
+  display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;
+  gap: 16px; margin-bottom: 24px;
+}
+.page-header h1 { font-size: 2.1rem; line-height: 1.2; margin: 0 0 2px 0; }
+.page-header p { color: var(--text-secondary); margin-top: 0; font-size: 1.17rem; }
 
-/* --- Remodeled Buttons --- */
-button, select, input { font-family: var(--font-family); font-size: 1rem; border-radius: var(--radius); border: 1px solid var(--border-color); padding: 10px 16px; transition: var(--transition); background-color: var(--surface-color); }
-button { cursor: pointer; }
-button:disabled { opacity: 0.5; cursor: not-allowed; }
-.primary-btn { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
-.primary-btn:hover:not(:disabled) { opacity: 0.85; }
-.secondary-btn { background-color: var(--surface-color); }
-.secondary-btn:hover:not(:disabled) { background-color: #f9f9f9; }
-.icon-btn { background: none; border: none; font-size: 1.2rem; padding: 8px; color: var(--text-secondary); }
+.header-actions {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.header-actions button {
+  min-width: 92px; /* Always enough for "Sync Now" even on mobile */
+  padding: 8px 16px;
+  font-size: 1.02rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  background: var(--surface-color);
+  transition: var(--transition);
+  font-weight: 500;
+}
+.header-actions button.primary-btn { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
+.header-actions button.secondary-btn { color: var(--primary-color); border-color: var(--primary-color); background: #f4faff; }
+.header-actions button.danger-btn { background: var(--danger-color); color: #fff; border: none; }
+.header-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+.header-actions button i { margin-right: 8px; }
 
-/* --- Light & Clean Workout Cards --- */
-.workout-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
-.day-card { background: var(--surface-color); border: 1px solid var(--border-color); padding: 24px; border-radius: var(--radius); cursor: pointer; text-align: center; transition: var(--transition); }
-.day-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
-.day-card i { font-size: 1.75rem; margin-bottom: 12px; display: block; color: var(--primary-color); }
+@media (max-width: 600px) {
+  .page-header { flex-direction: column; align-items: stretch; }
+  .header-actions button { width: 100%; min-width: 0; margin-bottom: 6px;}
+  .header-actions { flex-direction: column; align-items: stretch; gap: 4px; }
+}
 
-/* --- Light & Clean Workout LOGGING --- */
-.workout-log-container { display: flex; flex-direction: column; gap: 16px; }
-.exercise-log-item { background: var(--surface-color); border: 1px solid var(--border-color); padding: 20px; border-radius: var(--radius); }
-.exercise-log-header { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 16px; }
-.set-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-select, input { background-color: var(--input-bg-color); border-color: transparent; }
-input:focus, select:focus { border-color: var(--primary-color); background-color: var(--surface-color); box-shadow: 0 0 0 2px rgba(0,122,255,0.2); outline: none; }
+/* USER CARDS */
+.user-selector { display: flex; gap: 10px; margin-bottom: 22px; }
+.user-card {
+  background: #f5f7fa; border-radius: var(--radius); padding: 12px 20px; cursor: pointer;
+  transition: var(--transition); border: 2px solid transparent; font-size: 1.08rem; font-weight: 600; display: flex; align-items: center; gap: 8px;
+}
+.user-card.active { border-color: var(--primary-color); color: var(--primary-color); background: #e6effd; }
 
-/* --- Floating Buttons & Chat --- */
-.floating-btn { position: fixed; width: 56px; height: 56px; border-radius: 50%; color: #fff; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; border: none; box-shadow: var(--shadow); transition: transform 0.2s ease-in-out; }
+/* WORKOUT PICKS */
+.workout-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 18px;
+  margin-bottom: 30px;
+}
+.day-card {
+  border: 1.6px solid var(--border-color); border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  background: var(--surface-color);
+  padding: 18px 10px;
+  cursor: pointer;
+  text-align: center;
+  transition: box-shadow 0.19s;
+}
+.day-card:hover { box-shadow: 0 3px 12px rgba(0,120,255,0.07); background: #f3fafd;}
+.day-card i { font-size: 1.5rem; margin-bottom: 10px; color: var(--primary-color);}
+.day-card h3 { font-size: 1.09rem; font-weight: 600; }
+
+@media (max-width: 600px) {
+  .workout-grid { grid-template-columns: 1fr; }
+}
+
+/* WORKOUT LOG */
+.workout-log-container { display: flex; flex-direction: column; gap: 15px; }
+
+/* Card for each exercise log */
+.exercise-log-item {
+  background: var(--surface-color);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  border: 1.2px solid var(--border-color);
+  padding: 16px 13px 18px 13px;
+  margin-bottom: 0;
+  display: flex; flex-direction: column;
+}
+.exercise-log-header {
+  display: grid; grid-template-columns: 1fr 100px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.exercise-log-header select { background: var(--input-bg-color); border: 1px solid var(--border-color); font-size: 1.01rem; }
+.set-select     { width: 100%; padding: 7px 10px; font-size: 1.02rem; }
+.exercise-select{ width: 100%; padding: 7px 10px; font-size: 1.02rem; }
+
+.set-inputs {
+  display: flex; gap: 10px; width: 100%;
+}
+.set-inputs input[type="number"] {
+  flex: 1 1 45%;
+  min-width: 0;
+  padding: 12px 10px;
+  text-align: center;
+  border-radius: var(--radius);
+  border: 1.1px solid var(--border-color);
+  background: var(--input-bg-color);
+  font-size: 1.06rem;
+  transition: border-color 0.16s;
+}
+.set-inputs input:focus { outline: none; border-color: var(--primary-color); }
+
+/* Workout notes section */
+.notes-section {
+  background: var(--surface-color);
+  margin-top: 18px;
+  border-radius: var(--radius);
+  padding: 12px 15px 16px 15px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
+}
+.notes-section h3 { color: var(--primary-color); font-size: 1.1rem; font-weight: 700; margin-bottom: 7px;}
+#workoutNotes {
+  width: 100%; min-height: 68px; padding: 8px 11px;
+  border-radius: var(--radius);
+  border: 1.1px solid var(--border-color);
+  background: var(--input-bg-color);
+  font-size: 1.05rem; margin-top: 6px; resize: vertical;
+}
+
+/* FLOATING BUTTONS (all devices) */
+.floating-btn {
+  position: fixed;
+  z-index: 1000;
+  width: 54px; height: 54px;
+  border-radius: 999px;
+  border: none;
+  box-shadow: var(--shadow);
+  color: #fff;
+  font-size: 1.6rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  background: var(--primary-color); right: 26px;
+  bottom: 34px; /* Leaves space for mobile nav */
+  transition: background 0.15s, transform 0.15s;
+}
+.floating-btn.sync-btn { background: var(--success-color); bottom: 105px; }
+.floating-btn:active, .floating-btn:hover { opacity: 0.87; transform: scale(1.07);}
 .floating-btn.hidden { display: none !important; }
-.chat-btn { right: 28px; bottom: 28px; background-color: var(--primary-color); }
-.sync-btn { right: 28px; bottom: 96px; background-color: var(--success-color); }
-.ai-chat-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 2000; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: var(--transition); }
-.ai-chat-modal.active { opacity: 1; visibility: visible; }
-.ai-chat-widget { width: 90%; max-width: 500px; height: 75vh; background: var(--surface-color); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; }
-.chat-header { padding: 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-.chat-messages { flex-grow: 1; padding: 16px; overflow-y: auto; }
 
-/* --- Opaque & Clear Notifications --- */
-.notification { position: fixed; top: 20px; left: 50%; color: #fff; padding: 14px 24px; border-radius: 8px; box-shadow: var(--shadow); z-index: 3000; font-weight: 500; opacity: 0; transition: all 0.4s ease; transform: translate(-50%, -100%); }
-.notification.info { background-color: var(--primary-color); }
-.notification.success { background-color: var(--success-color); }
-.notification.error { background-color: var(--danger-color); }
-body > .notification { opacity: 1; transform: translate(-50%, 0); }
-
-
-/**
- * ===================================================================
- *  **FIX 2: DEFINITIVE MOBILE-FIRST LAYOUT**
- *  This media query restructures the layout for small screens,
- *  fixing all alignment and visibility issues.
- * ===================================================================
- */
-@media (max-width: 768px) {
-  .app-shell { flex-direction: column; }
-  .sidebar { order: 2; /* Move sidebar (nav) to the bottom */ width: 100%; height: 64px; flex-direction: row; justify-content: space-around; padding: 0; border-top: 1px solid var(--border-color); border-right: none; }
-  .main-content { order: 1; }
-  .logo, .nav-link span { display: none; }
-  .nav-link { flex: 1; justify-content: center; }
-  .nav-link i { font-size: 1.75rem; }
-  .page { padding: 16px; }
-  .page-header h1 { font-size: 1.75rem; }
-
-  /* **FIX 3: Perfectly Aligned Mobile Header Buttons** */
-  .header-actions button { padding: 0; width: 40px; height: 40px; font-size: 1.1rem; display: inline-flex; align-items: center; justify-content: center; }
-  .header-actions button span { display: none; }
-  .header-actions button i { margin: 0; }
-  
-  /* **FIX 4: Always Visible Floating Buttons** */
-  .chat-btn { bottom: 80px; /* 64px (nav) + 16px (gap) */ }
-  .sync-btn { bottom: 148px; /* 80px (chat) + 56px (btn) + 12px (gap) */ }
+/* AI CHAT MODAL */
+.ai-chat-modal { position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.33); z-index: 1300; display: flex; justify-content: center; align-items: center; opacity:0; visibility:hidden; transition: opacity 0.22s;}
+.ai-chat-modal.active { opacity:1; visibility:visible; }
+.ai-chat-widget {
+  width: 94%; max-width: 440px; height: 72vh; background: var(--surface-color); border-radius: var(--radius); box-shadow: 0 11px 32px rgba(24,34,52,0.14);
+  display: flex; flex-direction: column; overflow: hidden; border: 1.2px solid var(--border-color);
 }
+.chat-header { padding: 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;}
+.chat-messages { flex-grow: 1; padding: 13px; overflow-y: auto; }
+.ai-message, .user-message {
+  margin-bottom: 6px; border-radius: 15px; padding: 8px 13px; font-size: 0.99rem;
+}
+.ai-message { background: #f6f8fa; align-self: flex-start; color: var(--text-primary);}
+.user-message { background: var(--primary-color); color: #fff; align-self: flex-end; }
+.chat-input-container { display: flex; gap: 8px; padding: 14px; border-top: 1px solid var(--border-color); background: #fafbfc;}
+#chatInput { flex: 1; padding: 8px 12px; border-radius: 18px; border: 1px solid var(--border-color); background: #f5f6fa; }
+
+/* DASHBOARD FILTERS/BUTTONS */
+.dashboard-controls {
+  background: var(--surface-color); border-radius: var(--radius); padding: 16px; border: 1px solid var(--border-color);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-bottom: 22px;
+}
+.dashboard-controls select, .dashboard-controls button {
+  min-width: 110px; max-width: 250px;
+  font-size: 1rem;
+}
+.dashboard-grid { margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(265px,1fr)); gap: 18px;}
+.dashboard-card { background: var(--surface-color); border-radius: var(--radius); padding: 20px 14px; min-height: 68px; border: 1px solid var(--border-color); box-shadow: var(--shadow);}
+.chart-container { height: 230px; margin-top: 9px; }
+
+/* NOTIFICATIONS */
+.notification {
+  position: fixed; top: 20px; left: 50%; padding: 14px 24px; min-width: 150px;
+  border-radius: 9px; font-weight: 600; font-size: 1.07rem;
+  background: var(--primary-color); color: #fff; box-shadow: var(--shadow); z-index: 3000;
+  opacity: 0; pointer-events: none; transform: translateX(-50%) scale(0.97);
+  transition: opacity 0.22s, transform 0.18s;
+}
+.notification.info { background-color: var(--primary-color);}
+.notification.success { background: var(--success-color);}
+.notification.error { background: var(--danger-color);}
+body > .notification { opacity: 1; pointer-events: all; transform: translateX(-50%) scale(1);}
+
+/* MOBILE NAVIGATION FIX & LAYOUT */
+@media (max-width: 768px) {
+  .app-shell { flex-direction: column; min-height: 0;}
+  .sidebar { order: 2; width: 100vw; min-width: 0; min-height: 0; height: 60px; flex-direction: row; justify-content: space-around; align-items: center; padding: 0 0; border-right: none; border-top: 1px solid var(--border-color); border-bottom: none; position: fixed; bottom:0; left:0; z-index: 100;}
+  .main-content { order: 1; min-height: 0; padding-bottom: 80px;}
+  .logo, .nav-link span { display: none; }
+  .nav-link { flex: 1; justify-content: center; align-items: center; height: 100%; padding: 0; border-radius: 0;}
+  .nav-link i { font-size: 1.4rem;}
+  .page { padding: 15px 7px 0 7px !important; }
+  .page-header { flex-direction: column; align-items: stretch; padding-bottom: 3vw;}
+  .header-actions { flex-direction: row; flex-wrap: wrap;}
+  .header-actions button { flex: 1 1 48%; margin: 4px 0; min-width: 0; width: 100%;}
+  .dashboard-controls { flex-direction: column; gap: 11px 0;}
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .floating-btn { right: 16px; }
+  .chat-btn { bottom: 82px; } /* above nav bar */
+  .sync-btn { bottom: 148px; }
+  .exercise-log-header { grid-template-columns: 1fr 105px; gap: 9px;}
+  .set-inputs { gap: 5px; }
+  .exercise-log-item { padding: 12px 7px 14px 7px; }
+}
+
+/* SAFARI/IOS SAFE-AREA OVERRIDES */
+@supports(padding:max(0px)) {
+  body, .main-content, .page, .app-shell, .sidebar {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
+  .floating-btn { bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* Remove extra arrows from number fields */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance:textfield; }

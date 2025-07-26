@@ -2,44 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FitTrack Pro - Modern PPL Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>FitTrack Pro - PPL Tracker</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-    rel="stylesheet"
-  />
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-  />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Attach handlers to window to avoid ReferenceErrors -->
-  <script
-    async
-    defer
-    src="https://apis.google.com/js/api.js"
-    onload="window.gapiLoaded && window.gapiLoaded()"
-  ></script>
-  <script
-    async
-    defer
-    src="https://accounts.google.com/gsi/client"
-    onload="window.gisLoaded && window.gisLoaded()"
-  ></script>
+  <!-- Critical: Attach API callbacks to window to prevent ReferenceError on load -->
+  <script async defer src="https://apis.google.com/js/api.js" onload="window.gapiLoaded?.()"></script>
+  <script async defer src="https://accounts.google.com/gsi/client" onload="window.gisLoaded?.()"></script>
 </head>
 <body>
   <div class="app-shell">
     <nav class="sidebar">
       <div class="logo">FP</div>
-      <a href="#" class="nav-link active" data-page="homeScreen"
-        ><i class="fas fa-home"></i><span>Home</span></a
-      >
-      <a href="#" class="nav-link" data-page="dashboardScreen"
-        ><i class="fas fa-chart-line"></i><span>Dashboard</span></a
-      >
+      <a href="#" class="nav-link active" data-page="homeScreen"><i class="fas fa-home"></i><span>Home</span></a>
+      <a href="#" class="nav-link" data-page="dashboardScreen"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
     </nav>
 
     <main class="main-content">
@@ -51,21 +31,13 @@
             <p>Ready to crush your next session?</p>
           </div>
           <div class="header-actions">
-            <button id="authorizeBtnHome" class="primary-btn" disabled>
-              <i class="fab fa-google"></i> Loading...
-            </button>
-            <button id="syncBtnHome" class="primary-btn hidden">
-              <i class="fas fa-sync-alt"></i> Sync
-            </button>
+            <button id="authorizeBtnHome" class="primary-btn" disabled><i class="fab fa-google"></i> Loading...</button>
+            <button id="syncBtnHome" class="primary-btn hidden"><i class="fas fa-sync-alt"></i> Sync</button>
           </div>
         </header>
         <div class="user-selector">
-          <div class="user-card active" data-user="Harjas">
-            <i class="fas fa-user"></i><span>Harjas</span>
-          </div>
-          <div class="user-card" data-user="Darvesh">
-            <i class="fas fa-user"></i><span>Darvesh</span>
-          </div>
+          <div class="user-card active" data-user="Harjas"><i class="fas fa-user"></i><span>Harjas</span></div>
+          <div class="user-card" data-user="Darvesh"><i class="fas fa-user"></i><span>Darvesh</span></div>
         </div>
         <h2 id="workout-section-title">Select Workout for Harjas</h2>
         <div class="workout-grid" id="workoutGrid"></div>
@@ -75,28 +47,28 @@
       <div id="workoutScreen" class="page">
         <header class="page-header">
           <div>
-            <button id="backToHomeBtn" class="icon-btn">
-              <i class="fas fa-arrow-left"></i> Back
-            </button>
+            <button id="backToHomeBtn" class="icon-btn"><i class="fas fa-arrow-left"></i> Back</button>
             <h1 id="currentWorkoutTitle"></h1>
           </div>
           <div class="header-actions">
-            <button id="authorizeBtnWorkout" class="primary-btn" disabled>
-              <i class="fab fa-google"></i> Loading...
-            </button>
-            <button id="syncBtnWorkout" class="primary-btn hidden">
-              <i class="fas fa-sync-alt"></i> Sync
-            </button>
+            <button id="authorizeBtnWorkout" class="primary-btn" disabled><i class="fab fa-google"></i> Loading...</button>
+            <button id="syncBtnWorkout" class="primary-btn hidden"><i class="fas fa-sync-alt"></i> Sync</button>
             <button id="resetWorkoutBtn" class="secondary-btn">Reset</button>
           </div>
         </header>
-        <div id="exerciseListContainer" class="exercise-list-container"></div>
+        <div class="compact-workout-container">
+          <div class="compact-workout-header">
+            <span>Exercise</span>
+            <span>Set</span>
+            <span>Weight (kg)</span>
+            <span>Reps</span>
+            <span>Done</span>
+          </div>
+          <div id="exerciseListContainer" class="exercise-list-container"></div>
+        </div>
         <div class="notes-section">
           <h3><i class="fas fa-sticky-note"></i> Workout Notes</h3>
-          <textarea
-            id="workoutNotes"
-            placeholder="Log your thoughts, performance, and energy levels..."
-          ></textarea>
+          <textarea id="workoutNotes" placeholder="Log your thoughts, performance, and energy levels..."></textarea>
         </div>
       </div>
 
@@ -108,18 +80,10 @@
             <p>Analyze your progress and get insights.</p>
           </div>
           <div class="header-actions">
-            <button id="authorizeBtnDashboard" class="primary-btn" disabled>
-              <i class="fab fa-google"></i> Loading...
-            </button>
-            <button id="syncBtnDashboard" class="primary-btn hidden">
-              <i class="fas fa-sync-alt"></i> Sync Now
-            </button>
-            <button id="analyzeProgressBtn" class="primary-btn">
-              <i class="fas fa-magic"></i> AI Analysis
-            </button>
-            <button id="clearSheetBtn" class="danger-btn">
-              <i class="fas fa-trash-alt"></i> Clear Data
-            </button>
+            <button id="authorizeBtnDashboard" class="primary-btn" disabled><i class="fab fa-google"></i> Loading...</button>
+            <button id="syncBtnDashboard" class="primary-btn hidden"><i class="fas fa-sync-alt"></i> Sync Now</button>
+            <button id="analyzeProgressBtn" class="primary-btn"><i class="fas fa-magic"></i> AI Analysis</button>
+            <button id="clearSheetBtn" class="danger-btn"><i class="fas fa-trash-alt"></i> Clear Data</button>
           </div>
         </header>
         <div class="dashboard-controls">
@@ -140,42 +104,25 @@
     </main>
   </div>
 
-  <button
-    id="globalSyncBtn"
-    class="floating-btn sync-btn hidden"
-    title="Sync All Pending Workouts"
-  >
-    <i class="fas fa-sync-alt"></i>
-  </button>
-  <button
-    id="chatToggleBtn"
-    class="floating-btn chat-btn"
-    title="Open AI Coach"
-  >
-    <i class="fas fa-comments"></i>
-  </button>
+  <button id="globalSyncBtn" class="floating-btn sync-btn hidden" title="Sync All Pending Workouts"><i class="fas fa-sync-alt"></i></button>
+  <button id="chatToggleBtn" class="floating-btn chat-btn" title="Open AI Coach"><i class="fas fa-comments"></i></button>
 
   <div id="aiChatModal" class="ai-chat-modal">
     <div id="aiChatWidget" class="ai-chat-widget">
       <div class="chat-header">
         <h3><i class="fas fa-robot"></i> AI Fitness Coach</h3>
-        <button id="closeChatBtn" class="icon-btn">
-          <i class="fas fa-times"></i>
-        </button>
+        <button id="closeChatBtn" class="icon-btn"><i class="fas fa-times"></i></button>
       </div>
       <div id="chatMessages" class="chat-messages">
-        <div class="ai-message">
-          <p>Ask me anything about fitness!</p>
-        </div>
+        <div class="ai-message"><p>Hello! Ask me about your progress or anything fitness-related.</p></div>
       </div>
       <div class="chat-input-container">
         <input type="text" id="chatInput" placeholder="Ask a question..." />
-        <button id="sendChatBtn" class="primary-btn">
-          <i class="fas fa-paper-plane"></i>
-        </button>
+        <button id="sendChatBtn" class="primary-btn"><i class="fas fa-paper-plane"></i></button>
       </div>
     </div>
   </div>
-  <script src="script.js" defer></script>
+
+  <script src="script.js"></script>
 </body>
 </html>

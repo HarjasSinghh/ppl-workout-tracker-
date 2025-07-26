@@ -16,17 +16,18 @@
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
   />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Attach handlers to window to avoid onload ReferenceError -->
   <script
     async
     defer
     src="https://apis.google.com/js/api.js"
-    onload="gapiLoaded()"
+    onload="window.gapiLoaded?.()"
   ></script>
   <script
     async
     defer
     src="https://accounts.google.com/gsi/client"
-    onload="gisLoaded()"
+    onload="window.gisLoaded?.()"
   ></script>
 </head>
 <body>

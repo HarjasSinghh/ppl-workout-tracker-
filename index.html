@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
@@ -24,27 +24,22 @@
         <main class="main-content">
             <!-- Home Screen -->
             <div id="homeScreen" class="page active">
-                <header class="page-header"><div><h1>Welcome Back</h1><p>Ready to crush your next session?</p></div></header>
-                
-                <div id="authSection" class="auth-section">
-                    <p>Please authorize with Google to enable all features.</p>
-                    <button id="authorizeBtn" class="primary-btn"><i class="fab fa-google"></i> Authorize Google</button>
+                <header class="page-header">
+                    <div><h1>Welcome Back</h1><p>Ready to crush your next session?</p></div>
+                    <button id="authorizeBtnHome" class="primary-btn hidden"><i class="fab fa-google"></i> Authorize</button>
+                </header>
+                <div class="user-selector">
+                    <div class="user-card active" data-user="Harjas"><i class="fas fa-user"></i><span>Harjas</span></div>
+                    <div class="user-card" data-user="Darvesh"><i class="fas fa-user"></i><span>Darvesh</span></div>
                 </div>
-
-                <div id="mainAppContent" class="hidden">
-                    <div class="user-selector">
-                        <div class="user-card active" data-user="Harjas"><i class="fas fa-user"></i><span>Harjas</span></div>
-                        <div class="user-card" data-user="Darvesh"><i class="fas fa-user"></i><span>Darvesh</span></div>
-                    </div>
-                    <h2 id="workout-section-title">Select Workout for Harjas</h2>
-                    <div class="workout-grid">
-                        <div class="day-card" data-day="1"><i class="fas fa-fire"></i><h3>Push Day 1</h3></div>
-                        <div class="day-card" data-day="2"><i class="fas fa-hand-rock"></i><h3>Pull Day 1</h3></div>
-                        <div class="day-card" data-day="3"><i class="fas fa-walking"></i><h3>Leg Day</h3></div>
-                        <div class="day-card" data-day="4"><i class="fas fa-fire-alt"></i><h3>Push Day 2</h3></div>
-                        <div class="day-card" data-day="5"><i class="fas fa-hand-paper"></i><h3>Pull Day 2</h3></div>
-                        <div class="day-card" data-day="6"><i class="fas fa-bolt"></i><h3>Arms Day</h3></div>
-                    </div>
+                <h2 id="workout-section-title">Select Workout for Harjas</h2>
+                <div class="workout-grid">
+                    <div class="day-card" data-day="1"><i class="fas fa-fire"></i><h3>Push Day 1</h3></div>
+                    <div class="day-card" data-day="2"><i class="fas fa-hand-rock"></i><h3>Pull Day 1</h3></div>
+                    <div class="day-card" data-day="3"><i class="fas fa-walking"></i><h3>Leg Day</h3></div>
+                    <div class="day-card" data-day="4"><i class="fas fa-fire-alt"></i><h3>Push Day 2</h3></div>
+                    <div class="day-card" data-day="5"><i class="fas fa-hand-paper"></i><h3>Pull Day 2</h3></div>
+                    <div class="day-card" data-day="6"><i class="fas fa-bolt"></i><h3>Arms Day</h3></div>
                 </div>
             </div>
 
@@ -52,7 +47,10 @@
             <div id="workoutScreen" class="page">
                 <header class="page-header">
                     <div><button id="backToHomeBtn" class="icon-btn"><i class="fas fa-arrow-left"></i> Back</button><h1 id="currentWorkoutTitle"></h1></div>
-                    <button id="resetWorkoutBtn" class="secondary-btn">Reset</button>
+                    <div class="header-actions">
+                        <button id="authorizeBtnWorkout" class="primary-btn hidden"><i class="fab fa-google"></i> Authorize</button>
+                        <button id="resetWorkoutBtn" class="secondary-btn">Reset</button>
+                    </div>
                 </header>
                 <div id="exerciseListContainer" class="exercise-list-container"></div>
                 <div class="notes-section">
@@ -65,7 +63,11 @@
             <div id="dashboardScreen" class="page">
                 <header class="page-header">
                     <div><h1>Your Dashboard</h1><p>Analyze your progress and get insights.</p></div>
-                    <div class="header-actions"><button id="analyzeProgressBtn" class="primary-btn"><i class="fas fa-magic"></i> AI Analysis</button><button id="clearSheetBtn" class="danger-btn"><i class="fas fa-trash-alt"></i> Clear Data</button></div>
+                    <div class="header-actions">
+                         <button id="authorizeBtnDashboard" class="primary-btn hidden"><i class="fab fa-google"></i> Authorize</button>
+                        <button id="analyzeProgressBtn" class="primary-btn"><i class="fas fa-magic"></i> AI Analysis</button>
+                        <button id="clearSheetBtn" class="danger-btn"><i class="fas fa-trash-alt"></i> Clear Data</button>
+                    </div>
                 </header>
                 <div class="dashboard-controls">
                     <select id="dateRangeFilter" class="dropdown-filter"><option value="all">All Time</option><option value="7">Last 7 Days</option><option value="30">Last 30 Days</option><option value="90">Last 90 Days</option><option value="custom">Custom Range</option></select>

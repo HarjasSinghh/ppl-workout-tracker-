@@ -10,7 +10,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Critical: Attach API callbacks to window to prevent ReferenceError on load -->
   <script async defer src="https://apis.google.com/js/api.js" onload="window.gapiLoaded?.()"></script>
   <script async defer src="https://accounts.google.com/gsi/client" onload="window.gisLoaded?.()"></script>
 </head>
@@ -21,7 +20,6 @@
       <a href="#" class="nav-link active" data-page="homeScreen"><i class="fas fa-home"></i><span>Home</span></a>
       <a href="#" class="nav-link" data-page="dashboardScreen"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
     </nav>
-
     <main class="main-content">
       <!-- Home Screen -->
       <div id="homeScreen" class="page active">
@@ -31,7 +29,7 @@
             <p>Ready to crush your next session?</p>
           </div>
           <div class="header-actions">
-            <button id="authorizeBtnHome" class="primary-btn" disabled><i class="fab fa-google"></i> Loading...</button>
+            <button id="authorizeBtnHome" class="primary-btn" disabled><i class="fab fa-google"></i> Authorize</button>
             <button id="syncBtnHome" class="primary-btn hidden"><i class="fas fa-sync-alt"></i> Sync</button>
           </div>
         </header>
@@ -51,7 +49,7 @@
             <h1 id="currentWorkoutTitle"></h1>
           </div>
           <div class="header-actions">
-            <button id="authorizeBtnWorkout" class="primary-btn" disabled><i class="fab fa-google"></i> Loading...</button>
+            <button id="authorizeBtnWorkout" class="primary-btn" disabled><i class="fab fa-google"></i> Authorize</button>
             <button id="syncBtnWorkout" class="primary-btn hidden"><i class="fas fa-sync-alt"></i> Sync</button>
             <button id="resetWorkoutBtn" class="secondary-btn">Reset</button>
           </div>
@@ -67,40 +65,42 @@
 
       <!-- Dashboard Screen -->
       <div id="dashboardScreen" class="page">
-    <header class="page-header">
-      <div>
-        <h1>Your Dashboard</h1>
-        <p>Analyze your progress and get insights.</p>
+        <header class="page-header">
+          <div>
+            <h1>Your Dashboard</h1>
+            <p>Analyze your progress and get insights.</p>
+          </div>
+        </header>
+        <!-- Actions in a responsive 2x2 grid -->
+        <div class="dashboard-actions-grid">
+          <button id="authorizeBtnDashboard" class="secondary-btn" disabled><i class="fab fa-google"></i> Authorize</button>
+          <button id="syncBtnDashboard" class="primary-btn hidden"><i class="fas fa-sync-alt"></i> Sync Now</button>
+          <button id="analyzeProgressBtn" class="secondary-btn"><i class="fas fa-magic"></i> AI Analysis</button>
+          <button id="clearSheetBtn" class="danger-btn"><i class="fas fa-trash-alt"></i> Clear Data</button>
+        </div>
+        <div class="dashboard-controls">
+          <select id="dateRangeFilter" class="dropdown-filter">
+            <option value="all">All Time</option>
+            <option value="7">Last 7 Days</option>
+            <option value="30">Last 30 Days</option>
+          </select>
+          <select id="bodyPartFilter" class="dropdown-filter">
+            <option value="all">All Body Parts</option>
+          </select>
+          <select id="exerciseFilter" class="dropdown-filter" disabled>
+            <option value="all">All Exercises</option>
+          </select>
+        </div>
+        <div id="dashboardContent" class="dashboard-grid"></div>
       </div>
-    </header>
+    </main>
+  </div>
 
-    <!-- NEW: 2x2 Responsive Grid for Action Buttons -->
-    <div class="dashboard-actions-grid">
-      <button id="authorizeBtnDashboard" class="secondary-btn" disabled><i class="fab fa-google"></i><span>Authorize</span></button>
-      <button id="syncBtnDashboard" class="primary-btn hidden"><i class="fas fa-sync-alt"></i><span>Sync Now</span></button>
-      <button id="analyzeProgressBtn" class="secondary-btn"><i class="fas fa-magic"></i><span>AI Analysis</span></button>
-      <button id="clearSheetBtn" class="danger-btn"><i class="fas fa-trash-alt"></i><span>Clear Data</span></button>
-    </div>
-    
-    <div class="dashboard-controls">
-      <select id="dateRangeFilter" class="dropdown-filter">
-        <option value="all">All Time</option>
-        <option value="7">Last 7 Days</option>
-        <option value="30">Last 30 Days</option>
-      </select>
-      <select id="bodyPartFilter" class="dropdown-filter">
-        <option value="all">All Body Parts</option>
-      </select>
-      <select id="exerciseFilter" class="dropdown-filter" disabled>
-        <option value="all">All Exercises</option>
-      </select>
-    </div>
-    <div id="dashboardContent" class="dashboard-grid"></div>
-</div>
+  <!-- RESTORED: Both floating buttons, stacked -->
+  <button id="globalSyncBtn" class="floating-btn sync-btn"><i class="fas fa-sync-alt"></i></button>
+  <button id="chatToggleBtn" class="floating-btn chat-btn"><i class="fas fa-comments"></i></button>
 
-  <button id="globalSyncBtn" class="floating-btn sync-btn hidden" title="Sync All Pending Workouts"><i class="fas fa-sync-alt"></i></button>
-  <button id="chatToggleBtn" class="floating-btn chat-btn" title="Open AI Coach"><i class="fas fa-comments"></i></button>
-
+  <!-- Chat Modal (always closed by default, not intrusive) -->
   <div id="aiChatModal" class="ai-chat-modal">
     <div id="aiChatWidget" class="ai-chat-widget">
       <div class="chat-header">

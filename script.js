@@ -70,18 +70,17 @@ let chartInstances = {};
 let isApiReady = false;
 
 // === 2. GOOGLE API INITIALIZATION (GLOBAL SCOPE) ===
-// These functions MUST be in the global scope for the onload callbacks to work.
-window.gapiLoaded = () => {
+function gapiLoaded() {
     gapi.load('client', initializeGapiClient);
-};
-window.gisLoaded = () => {
+}
+function gisLoaded() {
     try {
         tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: GOOGLE_CONFIG.CLIENT_ID, scope: GOOGLE_CONFIG.SCOPES, callback: (resp) => handleAuthResponse(resp),
+            client_id: GOOGLE_CONFIG.CLIENT_ID, scope: GOOGLE_CONFIG.SCOPES, callback: handleAuthResponse,
         });
         gisInited = true; checkApiReady();
     } catch (e) { showNotification("Critical Error: Could not initialize Google Sign-In.", "error");}
-};
+}
 async function initializeGapiClient() {
     try {
         await gapi.client.init({ discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"] });
@@ -130,7 +129,8 @@ function updateAuthorizeButtons(enabled, text) {
 }
 function showNotification(message, type = 'info') {
     const el = document.createElement('div');
-    el.className = `notification ${type}`;
+    el.className = `notification`;
+    el.style.backgroundColor = type === 'error' ? 'var(--danger-color)' : type === 'success' ? '#0F9D58' : 'var(--primary-color)';
     el.textContent = message;
     document.body.appendChild(el);
     setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; }, 10);
@@ -181,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.pages.forEach(p => p.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
         elements.navLinks.forEach(l => l.classList.toggle('active', l.dataset.page === pageId));
-        if (pageId === 'dashboardScreen' && gapi.client?.getToken()) {
+        if (pageId === 'dashboardScreen' && isApiReady && gapi.client?.getToken()) {
             fetchDashboardData(false);
         }
     }
@@ -349,10 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const bodyParts = [...new Set(sheetData.filter(row => row.user === currentUser).map(row => row.bodyPart))].filter(Boolean);
         elements.bodyPartFilter.innerHTML = '<option value="all">All Body Parts</option>';
         bodyParts.forEach(bp => {
-            const option = document.createElement('option');
-            option.value = bp;
-            option.textContent = bp;
-            elements.bodyPartFilter.appendChild(option);
+            elements.bodyPartFilter.innerHTML += `<option value="${bp}">${bp}</option>`;
         });
         populateExerciseFilter();
     }
@@ -362,10 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const exercises = [...new Set(sheetData.filter(row => row.user === currentUser && (bodyPart === 'all' || row.bodyPart === bodyPart)).map(row => row.exercise))].filter(Boolean);
         elements.exerciseFilter.innerHTML = '<option value="all">All Exercises</option>';
         exercises.forEach(ex => {
-            const option = document.createElement('option');
-            option.value = ex;
-            option.textContent = ex;
-            elements.exerciseFilter.appendChild(option);
+            elements.exerciseFilter.innerHTML += `<option value="${ex}">${ex}</option>`;
         });
         elements.exerciseFilter.disabled = exercises.length === 0;
     }
@@ -374,29 +368,72 @@ document.addEventListener('DOMContentLoaded', () => {
         const bodyPart = elements.bodyPartFilter.value;
         const exercise = elements.exerciseFilter.value;
         const dateRange = elements.dateRangeFilter.value;
-        const data = sheetData.filter(row => {
+
+        let filteredData = sheetData.filter(row => {
             const isUser = row.user === currentUser;
-            const isBodyPart = bodyPart === 'all' || row.bodyPart === bodyPart;
-            const isExercise = exercise === 'all' || row.exercise === exercise;
             const isDate = dateRange === 'all' || (new Date() - new Date(row.date)) / 86400000 <= parseInt(dateRange);
-            return isUser && isBodyPart && isExercise && isDate;
+            const isBodyPart = bodyPart === 'all' || row.bodyPart === bodyPart;
+            return isUser && isDate && isBodyPart;
         });
 
-        if (data.length === 0) { elements.dashboardContent.innerHTML = `<div class="dashboard-card"><p>No data found for this selection.</p></div>`; return; }
-        
-        const e1RM = (w, r) => r > 0 ? w * (1 + r / 30) : 0; data.forEach(row => row.e1RM = e1RM(row.weight, row.reps));
-        const bestSet = data.reduce((max, row) => row.e1RM > max.e1RM ? row : max, { e1RM: 0 });
+        if (exercise !== 'all') {
+            filteredData = filteredData.filter(row => row.exercise === exercise);
+        }
+
+        if (filteredData.length === 0) {
+            elements.dashboardContent.innerHTML = `<div class="dashboard-card"><p>No data found for this selection.</p></div>`;
+            return;
+        }
+
+        const e1RM = (w, r) => (r > 0 ? w * (1 + r / 30) : 0);
+        filteredData.forEach(row => row.e1RM = e1RM(row.weight, row.reps));
+
+        const bestSet = filteredData.reduce((max, row) => (row.e1RM > max.e1RM ? row : max), { e1RM: 0 });
         
         elements.dashboardContent.innerHTML = `<div class="dashboard-card"><h3>Best Lift</h3><p style="font-size: 2rem; font-weight: 700;">${bestSet.weight}kg x ${bestSet.reps} reps</p><small>${bestSet.exercise}</small></div><div class="dashboard-card"><h3>Est. 1-Rep Max</h3><p style="font-size: 2rem; font-weight: 700;">${bestSet.e1RM.toFixed(1)}kg</p></div><div class="dashboard-card" style="grid-column: 1 / -1;"><div class="chart-container"><canvas id="progressChart"></canvas></div></div>`;
         
-        const chartData = exercise === 'all' ? data.filter(d=>d.bodyPart === bodyPart) : data.filter(d => d.exercise === exercise);
-        renderProgressChart(chartData.sort((a, b) => a.date - b.date), "progressChart");
+        let chartData;
+        let chartLabel = "Estimated 1RM (kg)";
+
+        if (exercise === 'all' && bodyPart !== 'all') {
+            chartLabel = `Average 1RM for ${bodyPart}`;
+            const groupedByDate = filteredData.reduce((acc, curr) => {
+                const date = curr.date.toISOString().split('T')[0];
+                if (!acc[date]) acc[date] = [];
+                acc[date].push(curr.e1RM);
+                return acc;
+            }, {});
+            chartData = Object.keys(groupedByDate).map(date => ({
+                date: new Date(date + 'T00:00:00'),
+                e1RM: groupedByDate[date].reduce((a, b) => a + b, 0) / groupedByDate[date].length
+            }));
+        } else {
+            chartData = filteredData;
+            if (exercise !== 'all') chartLabel = `1RM for ${exercise}`;
+        }
+        
+        renderProgressChart(chartData.sort((a, b) => a.date - b.date), "progressChart", chartLabel);
     }
 
-    function renderProgressChart(data, canvasId) { 
-        if (chartInstances[canvasId]) chartInstances[canvasId].destroy(); 
-        const ctx = document.getElementById(canvasId)?.getContext('2d'); 
-        if (ctx) chartInstances[canvasId] = new Chart(ctx, { type: 'line', data: { labels: data.map(d => d.date.toLocaleDateString()), datasets: [{ label: 'Estimated 1RM (kg)', data: data.map(d => d.e1RM.toFixed(1)), borderColor: 'var(--primary-color)', tension: 0.1, fill: true }] }, options: { responsive: true, maintainAspectRatio: false } }); 
+    function renderProgressChart(data, canvasId, label) {
+        if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
+        const ctx = document.getElementById(canvasId)?.getContext('2d');
+        if (ctx) {
+            chartInstances[canvasId] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.date.toLocaleDateString()),
+                    datasets: [{
+                        label: label,
+                        data: data.map(d => d.e1RM.toFixed(1)),
+                        borderColor: 'var(--primary-color)',
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
     }
     
     async function clearGoogleSheet() {

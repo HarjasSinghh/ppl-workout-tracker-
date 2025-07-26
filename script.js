@@ -2,8 +2,8 @@
 // CONFIGURATION & STATE
 // ==========================================
 const GOOGLE_CONFIG = {
-    CLIENT_ID: 'YOUR_OAUTH_CLIENT_ID_HERE',
-    SPREADSHEET_ID: 'YOUR_SPREADSHEET_ID_HERE',
+    CLIENT_ID: '1040913543341-0vj52ims83dkcudpvh6rdtvrvr5da5nn.apps.googleusercontent.com',
+    SPREADSHEET_ID: '15O-z40Jsy2PFs0XaXle07g_hJuwBCgpEi399TC9Yaic',
     SCOPES: "https://www.googleapis.com/auth/spreadsheets",
 };
 const workoutData = {

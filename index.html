@@ -24,9 +24,12 @@
         <main class="main-content">
             <!-- Home Screen -->
             <div id="homeScreen" class="page active">
-                <header class="page-header">
-                    <div><h1>Welcome Back</h1><p>Ready to crush your next session?</p></div>
-                </header>
+                <header class="page-header"><div><h1>Welcome Back</h1><p>Ready to crush your next session?</p></div></header>
+                <div class="user-selector">
+                    <div class="user-card active" data-user="Harjas"><i class="fas fa-user"></i><span>Harjas</span></div>
+                    <div class="user-card" data-user="Darvesh"><i class="fas fa-user"></i><span>Darvesh</span></div>
+                </div>
+                <h2 id="workout-section-title">Select Workout for Harjas</h2>
                 <div class="workout-grid">
                     <div class="day-card" data-day="1"><i class="fas fa-fire"></i><h3>Push Day 1</h3><p>Chest, Shoulders</p></div>
                     <div class="day-card" data-day="2"><i class="fas fa-hand-rock"></i><h3>Pull Day 1</h3><p>Back, Biceps</p></div>
@@ -40,15 +43,8 @@
             <!-- Workout Screen -->
             <div id="workoutScreen" class="page">
                 <header class="page-header">
-                    <div>
-                        <button id="backToHomeBtn" class="icon-btn"><i class="fas fa-arrow-left"></i> Back</button>
-                        <h1 id="currentWorkoutTitle"></h1>
-                    </div>
-                    <div id="authContainer" class="auth-container">
-                         <button id="resetWorkoutBtn" class="secondary-btn" style="display: none;">Reset</button>
-                         <button id="authorizeBtn" class="primary-btn" style="visibility: hidden;">Authorize</button>
-                         <button id="syncDataBtn" class="primary-btn" style="display: none;">Sync Workout</button>
-                    </div>
+                    <div><button id="backToHomeBtn" class="icon-btn"><i class="fas fa-arrow-left"></i> Back</button><h1 id="currentWorkoutTitle"></h1></div>
+                    <div class="auth-container"><button id="resetWorkoutBtn" class="secondary-btn">Reset</button><button id="authorizeBtn" class="primary-btn" style="visibility: hidden;">Authorize</button><button id="syncDataBtn" class="primary-btn" style="display: none;">Sync</button></div>
                 </header>
                 <div id="exerciseListContainer" class="exercise-list-container"></div>
             </div>
@@ -57,27 +53,21 @@
             <div id="dashboardScreen" class="page">
                 <header class="page-header">
                     <div><h1>Your Dashboard</h1><p>Analyze your progress and get insights.</p></div>
-                    <div class="header-actions">
-                        <button id="refreshDataBtn" class="primary-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
-                        <button id="clearSheetBtn" class="danger-btn"><i class="fas fa-trash-alt"></i> Clear All Data</button>
-                    </div>
+                    <div class="header-actions"><button id="analyzeProgressBtn" class="primary-btn"><i class="fas fa-magic"></i> AI Analysis</button><button id="refreshDataBtn" class="secondary-btn"><i class="fas fa-sync-alt"></i> Refresh</button><button id="clearSheetBtn" class="danger-btn"><i class="fas fa-trash-alt"></i> Clear Data</button></div>
                 </header>
-                <div class="dashboard-controls">
-                    <div class="date-filter-group"><label for="startDateFilter">Start Date:</label><input type="date" id="startDateFilter" class="date-filter"></div>
-                    <div class="date-filter-group"><label for="endDateFilter">End Date:</label><input type="date" id="endDateFilter" class="date-filter"></div>
-                    <select id="bodyPartFilter" class="dropdown-filter"><option value="all">All Body Parts</option></select>
-                    <select id="exerciseFilter" class="dropdown-filter" disabled><option value="all">All Exercises</option></select>
-                </div>
+                <div class="dashboard-controls"><div class="date-filter-group"><label for="startDateFilter">Start:</label><input type="date" id="startDateFilter" class="date-filter"></div><div class="date-filter-group"><label for="endDateFilter">End:</label><input type="date" id="endDateFilter" class="date-filter"></div><select id="bodyPartFilter" class="dropdown-filter"><option value="all">All Body Parts</option></select><select id="exerciseFilter" class="dropdown-filter" disabled><option value="all">All Exercises</option></select></div>
                 <div id="dashboardContent" class="dashboard-grid"></div>
             </div>
         </main>
     </div>
 
-    <!-- AI Chat Widget -->
-    <div id="aiChatWidget" class="ai-chat-widget">
-        <div class="chat-header"><h3><i class="fas fa-robot"></i> AI Fitness Coach</h3><button id="closeChatBtn" class="icon-btn"><i class="fas fa-times"></i></button></div>
-        <div id="chatMessages" class="chat-messages"><div class="ai-message"><p>Ask me anything about fitness!</p></div></div>
-        <div class="chat-input-container"><input type="text" id="chatInput" placeholder="Ask a question..."><button id="sendChatBtn" class="primary-btn"><i class="fas fa-paper-plane"></i></button></div>
+    <!-- AI Chat Modal -->
+    <div id="aiChatModal" class="ai-chat-modal">
+        <div id="aiChatWidget" class="ai-chat-widget">
+            <div class="chat-header"><h3><i class="fas fa-robot"></i> AI Fitness Coach</h3><button id="closeChatBtn" class="icon-btn"><i class="fas fa-times"></i></button></div>
+            <div id="chatMessages" class="chat-messages"><div class="ai-message"><p>Ask me anything about fitness!</p></div></div>
+            <div class="chat-input-container"><input type="text" id="chatInput" placeholder="Ask a question..."><button id="sendChatBtn" class="primary-btn"><i class="fas fa-paper-plane"></i></button></div>
+        </div>
     </div>
     <button id="chatToggleBtn" class="chat-toggle-btn"><i class="fas fa-comments"></i></button>
 

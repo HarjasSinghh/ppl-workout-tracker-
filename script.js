@@ -70,36 +70,24 @@ let chartInstances = {};
 let isApiReady = false;
 
 // === 2. GOOGLE API INITIALIZATION (GLOBAL SCOPE) ===
+// These functions MUST be in the global scope for the onload callbacks to work.
 window.gapiLoaded = () => {
     gapi.load('client', initializeGapiClient);
 };
-
 window.gisLoaded = () => {
     try {
         tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: GOOGLE_CONFIG.CLIENT_ID,
-            scope: GOOGLE_CONFIG.SCOPES,
-            callback: handleAuthResponse,
+            client_id: GOOGLE_CONFIG.CLIENT_ID, scope: GOOGLE_CONFIG.SCOPES, callback: (resp) => handleAuthResponse(resp),
         });
-        gisInited = true;
-        checkApiReady();
-    } catch (e) {
-        showNotification("Critical Error: Could not initialize Google Sign-In.", "error");
-    }
+        gisInited = true; checkApiReady();
+    } catch (e) { showNotification("Critical Error: Could not initialize Google Sign-In.", "error");}
 };
-
 async function initializeGapiClient() {
     try {
-        await gapi.client.init({
-            discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
-        });
-        gapiInited = true;
-        checkApiReady();
-    } catch (e) {
-        showNotification("Critical Error: Could not initialize Google Sheets API.", "error");
-    }
+        await gapi.client.init({ discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"] });
+        gapiInited = true; checkApiReady();
+    } catch (e) { showNotification("Critical Error: Could not initialize Google Sheets API.", "error"); }
 }
-
 function checkApiReady() {
     if (gapiInited && gisInited) {
         isApiReady = true;
@@ -107,6 +95,46 @@ function checkApiReady() {
         const token = gapi.client.getToken();
         updateSigninStatus(token !== null);
     }
+}
+function handleAuthClick() {
+    if (!isApiReady) { showNotification("Google API is not ready. Please try again.", "error"); return; }
+    tokenClient.requestAccessToken({ prompt: 'consent' });
+}
+function handleAuthResponse(resp) {
+    if (resp.error) { showNotification("Authorization failed. Check console.", "error"); updateSigninStatus(false); return; }
+    updateSigninStatus(true);
+}
+function updateSigninStatus(isSignedIn) {
+    document.querySelectorAll('[id^="authorizeBtn"]').forEach(btn => btn.classList.toggle('hidden', isSignedIn));
+    document.querySelectorAll('[id^="syncBtn"], #globalSyncBtn').forEach(btn => btn.classList.toggle('hidden', !isSignedIn));
+
+    const hasData = hasPendingData();
+    document.getElementById('globalSyncBtn').disabled = !hasData;
+    document.querySelectorAll('#syncBtnHome, #syncBtnWorkout').forEach(btn => btn.disabled = !hasData);
+    
+    document.getElementById('analyzeProgressBtn').disabled = !isSignedIn;
+    document.getElementById('clearSheetBtn').disabled = !isSignedIn;
+    document.getElementById('syncBtnDashboard').disabled = !isSignedIn;
+
+    if (isSignedIn && document.getElementById('dashboardScreen').classList.contains('active')) {
+        fetchDashboardData(false);
+    } else if (!isSignedIn) {
+        document.getElementById('dashboardContent').innerHTML = `<div class="dashboard-card"><p>Please authorize to view dashboard.</p></div>`;
+    }
+}
+function updateAuthorizeButtons(enabled, text) {
+    document.querySelectorAll('[id^="authorizeBtn"]').forEach(btn => {
+        btn.disabled = !enabled;
+        btn.innerHTML = `<i class="fab fa-google"></i> ${text}`;
+    });
+}
+function showNotification(message, type = 'info') {
+    const el = document.createElement('div');
+    el.className = `notification ${type}`;
+    el.textContent = message;
+    document.body.appendChild(el);
+    setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; }, 10);
+    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 4000); }, 4000);
 }
 
 // === 3. MAIN APP LOGIC (RUNS AFTER DOM IS READY) ===
@@ -139,50 +167,16 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('resetWorkoutBtn').addEventListener('click', resetCurrentWorkout);
         elements.workoutNotes.addEventListener('input', saveNotes);
         document.getElementById('analyzeProgressBtn').addEventListener('click', analyzeProgressWithAI);
-        document.getElementById('clearSheetBtn').addEventListener('click', clearGoogleSheet); // Event listener for the clear button
+        document.getElementById('clearSheetBtn').addEventListener('click', clearGoogleSheet);
         elements.dateRangeFilter.addEventListener('change', renderDashboard);
-        elements.bodyPartFilter.addEventListener('change', () => {
-            populateExerciseFilter();
-            renderDashboard();
-        });
+        elements.bodyPartFilter.addEventListener('change', () => { populateExerciseFilter(); renderDashboard(); });
         elements.exerciseFilter.addEventListener('change', renderDashboard);
         document.getElementById('chatToggleBtn').addEventListener('click', () => elements.aiChatModal.classList.add('active'));
         document.getElementById('closeChatBtn').addEventListener('click', () => elements.aiChatModal.classList.remove('active'));
         document.getElementById('sendChatBtn').addEventListener('click', sendChatMessage);
         elements.chatInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendChatMessage(); });
     }
-
-    // === 4. AUTHENTICATION & UI STATE (GLOBAL ACCESS) ===
-    window.handleAuthClick = function() {
-        if (!isApiReady) { showNotification("Google API is not ready. Please try again.", "error"); return; }
-        tokenClient.requestAccessToken({ prompt: 'consent' });
-    };
-
-    window.handleAuthResponse = function(resp) {
-        if (resp.error) { showNotification("Authorization failed. Check console.", "error"); updateSigninStatus(false); return; }
-        updateSigninStatus(true);
-    };
-
-    window.updateSigninStatus = function(isSignedIn) {
-        document.querySelectorAll('[id^="authorizeBtn"]').forEach(btn => btn.classList.toggle('hidden', isSignedIn));
-        document.querySelectorAll('[id^="syncBtn"], #globalSyncBtn').forEach(btn => btn.classList.toggle('hidden', !isSignedIn));
-
-        const hasData = hasPendingData();
-        document.getElementById('globalSyncBtn').disabled = !hasData;
-        document.querySelectorAll('#syncBtnHome, #syncBtnWorkout').forEach(btn => btn.disabled = !hasData);
-        
-        document.getElementById('analyzeProgressBtn').disabled = !isSignedIn;
-        document.getElementById('clearSheetBtn').disabled = !isSignedIn;
-        document.getElementById('syncBtnDashboard').disabled = !isSignedIn;
-
-        if (isSignedIn && document.getElementById('dashboardScreen').classList.contains('active')) {
-            fetchDashboardData(false);
-        } else if (!isSignedIn) {
-            elements.dashboardContent.innerHTML = `<div class="dashboard-card"><p>Please authorize to view dashboard.</p></div>`;
-        }
-    };
     
-    // === 5. CORE APP LOGIC ===
     function showPage(pageId) {
         elements.pages.forEach(p => p.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
@@ -275,7 +269,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // === 6. DATA SYNC, FETCH & STORAGE ===
     function saveWorkoutProgress() {
         localStorage.setItem('workoutProgress', JSON.stringify(workoutProgress));
         if (gapi.client?.getToken()) {
@@ -289,6 +282,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function hasPendingData() {
         return Object.values(workoutProgress).some(day => day.sets && Object.values(day.sets).some(ex => Object.values(ex).some(set => set.completed)));
+    }
+
+    function syncOrFetchData(event) {
+        if (event.currentTarget.id.includes('Dashboard')) { fetchDashboardData(true); } else { syncWorkoutData(); }
     }
 
     async function syncWorkoutData() {
@@ -348,7 +345,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) { if (showNotificationOnFail) showNotification("Failed to fetch dashboard data.", "error"); }
     }
 
-    // === 7. DASHBOARD RENDERING & FILTERS ===
     function populateBodyPartFilter() {
         const bodyParts = [...new Set(sheetData.filter(row => row.user === currentUser).map(row => row.bodyPart))].filter(Boolean);
         elements.bodyPartFilter.innerHTML = '<option value="all">All Body Parts</option>';
@@ -378,12 +374,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const bodyPart = elements.bodyPartFilter.value;
         const exercise = elements.exerciseFilter.value;
         const dateRange = elements.dateRangeFilter.value;
-
         const data = sheetData.filter(row => {
             const isUser = row.user === currentUser;
             const isBodyPart = bodyPart === 'all' || row.bodyPart === bodyPart;
             const isExercise = exercise === 'all' || row.exercise === exercise;
-            const isDate = dateRange === 'all' || (new Date() - row.date) / 86400000 <= parseInt(dateRange);
+            const isDate = dateRange === 'all' || (new Date() - new Date(row.date)) / 86400000 <= parseInt(dateRange);
             return isUser && isBodyPart && isExercise && isDate;
         });
 
@@ -394,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         elements.dashboardContent.innerHTML = `<div class="dashboard-card"><h3>Best Lift</h3><p style="font-size: 2rem; font-weight: 700;">${bestSet.weight}kg x ${bestSet.reps} reps</p><small>${bestSet.exercise}</small></div><div class="dashboard-card"><h3>Est. 1-Rep Max</h3><p style="font-size: 2rem; font-weight: 700;">${bestSet.e1RM.toFixed(1)}kg</p></div><div class="dashboard-card" style="grid-column: 1 / -1;"><div class="chart-container"><canvas id="progressChart"></canvas></div></div>`;
         
-        const chartData = exercise === 'all' ? data : data.filter(d => d.exercise === exercise);
+        const chartData = exercise === 'all' ? data.filter(d=>d.bodyPart === bodyPart) : data.filter(d => d.exercise === exercise);
         renderProgressChart(chartData.sort((a, b) => a.date - b.date), "progressChart");
     }
 
@@ -404,23 +399,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ctx) chartInstances[canvasId] = new Chart(ctx, { type: 'line', data: { labels: data.map(d => d.date.toLocaleDateString()), datasets: [{ label: 'Estimated 1RM (kg)', data: data.map(d => d.e1RM.toFixed(1)), borderColor: 'var(--primary-color)', tension: 0.1, fill: true }] }, options: { responsive: true, maintainAspectRatio: false } }); 
     }
     
-    // === 8. OTHER HELPER FUNCTIONS ===
     async function clearGoogleSheet() {
         if (!gapi.client?.getToken()) { return showNotification("Please authorize first.", "error"); }
         if (!confirm("Are you sure you want to delete ALL data from the Google Sheet? This action cannot be undone.")) { return; }
-        
         showNotification("Clearing sheet data...", "info");
         try {
-            await gapi.client.sheets.spreadsheets.values.clear({
-                spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID,
-                range: 'WorkoutLog!A2:H',
-            });
+            await gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID, range: 'WorkoutLog!A2:H' });
             sheetData = [];
+            populateBodyPartFilter();
             renderDashboard();
             showNotification("All data has been cleared from your Google Sheet.", "success");
-        } catch (err) {
-            showNotification("Failed to clear sheet data. Check console.", "error");
-        }
+        } catch (err) { showNotification("Failed to clear sheet data. Check console.", "error"); }
     }
 
     function loadCurrentUser() { currentUser = localStorage.getItem('currentUser') || 'Harjas'; elements.userCards.forEach(c => c.classList.toggle('active', c.dataset.user === currentUser)); elements.workoutSectionTitle.textContent = `Select Workout for ${currentUser}`; }
@@ -438,13 +427,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { elements.chatMessages.querySelector('.ai-message:last-child').remove(); addChatMessage("Sorry, I'm having trouble connecting right now.", 'ai'); }
     }
     function addChatMessage(message, sender) { const msgDiv = document.createElement('div'); msgDiv.className = `${sender}-message`; msgDiv.innerHTML = `<p>${message}</p>`; elements.chatMessages.appendChild(msgDiv); elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight; }
-    function showNotification(message, type = 'info') { const el = document.createElement('div'); el.className = `notification ${type}`; el.textContent = message; document.body.appendChild(el); setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; }, 10); setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 4000); }, 4000); }
-    function updateAuthorizeButtons(enabled, text) { document.querySelectorAll('[id^="authorizeBtn"]').forEach(btn => { btn.disabled = !enabled; btn.innerHTML = `<i class="fab fa-google"></i> ${text}`; }); }
 
     // Initial setup call
     setupEventListeners();
     loadCurrentUser();
     loadWorkoutProgress();
     renderHome();
-    updateAuthorizeButtons(false, "Loading...");
 });

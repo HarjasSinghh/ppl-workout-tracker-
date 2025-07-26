@@ -67,35 +67,36 @@
 
       <!-- Dashboard Screen -->
       <div id="dashboardScreen" class="page">
-        <header class="page-header">
-          <div>
-            <h1>Your Dashboard</h1>
-            <p>Analyze your progress and get insights.</p>
-          </div>
-          <div class="header-actions">
-            <button id="authorizeBtnDashboard" class="primary-btn" disabled><i class="fab fa-google"></i> Loading...</button>
-            <button id="syncBtnDashboard" class="primary-btn hidden"><i class="fas fa-sync-alt"></i> Sync Now</button>
-            <button id="analyzeProgressBtn" class="primary-btn"><i class="fas fa-magic"></i> AI Analysis</button>
-            <button id="clearSheetBtn" class="danger-btn"><i class="fas fa-trash-alt"></i> Clear Data</button>
-          </div>
-        </header>
-        <div class="dashboard-controls">
-          <select id="dateRangeFilter" class="dropdown-filter">
-            <option value="all">All Time</option>
-            <option value="7">Last 7 Days</option>
-            <option value="30">Last 30 Days</option>
-          </select>
-          <select id="bodyPartFilter" class="dropdown-filter">
-            <option value="all">All Body Parts</option>
-          </select>
-          <select id="exerciseFilter" class="dropdown-filter" disabled>
-            <option value="all">All Exercises</option>
-          </select>
-        </div>
-        <div id="dashboardContent" class="dashboard-grid"></div>
+    <header class="page-header">
+      <div>
+        <h1>Your Dashboard</h1>
+        <p>Analyze your progress and get insights.</p>
       </div>
-    </main>
-  </div>
+    </header>
+
+    <!-- NEW: 2x2 Responsive Grid for Action Buttons -->
+    <div class="dashboard-actions-grid">
+      <button id="authorizeBtnDashboard" class="secondary-btn" disabled><i class="fab fa-google"></i><span>Authorize</span></button>
+      <button id="syncBtnDashboard" class="primary-btn hidden"><i class="fas fa-sync-alt"></i><span>Sync Now</span></button>
+      <button id="analyzeProgressBtn" class="secondary-btn"><i class="fas fa-magic"></i><span>AI Analysis</span></button>
+      <button id="clearSheetBtn" class="danger-btn"><i class="fas fa-trash-alt"></i><span>Clear Data</span></button>
+    </div>
+    
+    <div class="dashboard-controls">
+      <select id="dateRangeFilter" class="dropdown-filter">
+        <option value="all">All Time</option>
+        <option value="7">Last 7 Days</option>
+        <option value="30">Last 30 Days</option>
+      </select>
+      <select id="bodyPartFilter" class="dropdown-filter">
+        <option value="all">All Body Parts</option>
+      </select>
+      <select id="exerciseFilter" class="dropdown-filter" disabled>
+        <option value="all">All Exercises</option>
+      </select>
+    </div>
+    <div id="dashboardContent" class="dashboard-grid"></div>
+</div>
 
   <button id="globalSyncBtn" class="floating-btn sync-btn hidden" title="Sync All Pending Workouts"><i class="fas fa-sync-alt"></i></button>
   <button id="chatToggleBtn" class="floating-btn chat-btn" title="Open AI Coach"><i class="fas fa-comments"></i></button>

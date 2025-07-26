@@ -2,7 +2,7 @@
 
 /**
  * ===================================================================
- * FitTrack Pro - Main Application Script v3.0 (Stable & Refined UI)
+ * FitTrack Pro - Main Application Script v4.0 (Final Stable Build)
  * ===================================================================
  */
 
@@ -164,9 +164,12 @@ function checkPendingWorkoutData() {
     if (day?.sets) {
       for (const ex of Object.values(day.sets)) {
         if (ex) {
-            for(const set of Object.values(ex)) {
-                if(typeof set === 'object' && (set.weight || set.reps)) return true;
+          for (const set of Object.values(ex)) {
+            // A set is considered pending if it has a weight or reps value.
+            if (typeof set === 'object' && (set.weight || set.reps)) {
+              return true;
             }
+          }
         }
       }
     }
@@ -209,11 +212,9 @@ function loadWorkoutUI() {
     item.className = 'exercise-log-item';
     item.dataset.exIndex = exIndex;
     
-    // Header for exercise and set selection
     const header = document.createElement('div');
     header.className = 'exercise-log-header';
     
-    // Exercise Dropdown
     const exerciseSelect = document.createElement('select');
     exerciseSelect.className = 'exercise-select';
     let optionsHtml = `<option value="${exercise.name}">${exercise.name}</option>`;
@@ -221,52 +222,47 @@ function loadWorkoutUI() {
     exerciseSelect.innerHTML = optionsHtml;
     exerciseSelect.value = progress.sets?.[exIndex]?.selectedExercise || exercise.name;
     
-    // Set Dropdown
     const setSelect = document.createElement('select');
     setSelect.className = 'set-select';
     for (let i = 1; i <= exercise.sets; i++) {
-      setSelect.innerHTML += `<option value="${i-1}">Set ${i}</option>`;
+      setSelect.innerHTML += `<option value="${i - 1}">Set ${i}</option>`;
     }
     
     header.appendChild(exerciseSelect);
     header.appendChild(setSelect);
     item.appendChild(header);
     
-    // Container for weight/reps inputs
     const inputsContainer = document.createElement('div');
     inputsContainer.className = 'set-inputs';
     item.appendChild(inputsContainer);
 
-    // Function to render inputs for the selected set
     const renderSetInputs = (setIndex) => {
       const p = progress.sets?.[exIndex]?.[setIndex] || {};
       inputsContainer.innerHTML = `
         <input type="number" name="weight" placeholder="Weight (kg)" value="${p.weight || ''}">
         <input type="number" name="reps" placeholder="Reps" value="${p.reps || ''}">
       `;
-      inputsContainer.querySelectorAll('input').forEach(input => {
-        input.addEventListener('change', () => handleSetChange(exIndex, setIndex));
-      });
     };
     
-    // Event listener for set selection
+    // Use event delegation on the container for performance and reliability
+    item.addEventListener('input', (e) => {
+      const setIndex = setSelect.value;
+      handleSetChange(exIndex, setIndex, e.target.name, e.target.value);
+    });
+    
     setSelect.addEventListener('change', () => {
       renderSetInputs(setSelect.value);
     });
     
-    // Event listener for exercise selection
     exerciseSelect.addEventListener('change', () => {
-        handleExerciseChange(exIndex, exerciseSelect.value);
+      handleExerciseChange(exIndex, exerciseSelect.value);
     });
 
-    // Initial render for the first set
-    renderSetInputs(0);
-    
+    renderSetInputs(0); // Initial render for the first set
     container.appendChild(item);
   });
 
   document.getElementById('workoutNotes').value = progress.notes || '';
-  document.getElementById('workoutNotes').addEventListener('change', saveNotes);
 }
 
 function handleExerciseChange(exIndex, newExerciseName) {
@@ -276,25 +272,20 @@ function handleExerciseChange(exIndex, newExerciseName) {
     saveWorkoutProgress();
 }
 
-function handleSetChange(exIndex, setIndex) {
-  const item = document.querySelector(`.exercise-log-item[data-ex-index="${exIndex}"]`);
-  if (!item) return;
-
+function handleSetChange(exIndex, setIndex, inputName, inputValue) {
   if (!workoutProgress[currentDay]) workoutProgress[currentDay] = { date: new Date().toISOString().slice(0, 10), sets: {}, notes: '' };
   if (!workoutProgress[currentDay].sets[exIndex]) workoutProgress[currentDay].sets[exIndex] = {};
   if (!workoutProgress[currentDay].sets[exIndex][setIndex]) workoutProgress[currentDay].sets[exIndex][setIndex] = {};
-
-  const weightInput = item.querySelector('input[name="weight"]');
-  const repsInput = item.querySelector('input[name="reps"]');
-
-  workoutProgress[currentDay].sets[exIndex][setIndex] = {
-    weight: weightInput.value,
-    reps: repsInput.value,
-  };
   
-  // Also save the selected exercise name at the exercise level
-  const exerciseSelect = item.querySelector('.exercise-select');
-  workoutProgress[currentDay].sets[exIndex].selectedExercise = exerciseSelect.value;
+  // Save the specific input value (weight or reps)
+  workoutProgress[currentDay].sets[exIndex][setIndex][inputName] = inputValue;
+  
+  // Ensure the selected exercise name is also saved
+  const item = document.querySelector(`.exercise-log-item[data-ex-index="${exIndex}"]`);
+  if (item) {
+    const exerciseSelect = item.querySelector('.exercise-select');
+    workoutProgress[currentDay].sets[exIndex].selectedExercise = exerciseSelect.value;
+  }
   
   saveWorkoutProgress();
 }
@@ -329,6 +320,7 @@ function prepareDataForSheets() {
       for (const setIndex in progress.sets[exIndex]) {
         if (setIndex === 'selectedExercise') continue;
         const set = progress.sets[exIndex][setIndex];
+        // A set is ready to sync if it has a value for weight or reps.
         if (set && (set.weight || set.reps)) {
           rows.push([progress.date, workout.name, exName, parseInt(setIndex) + 1, set.weight || 0, set.reps || 0, currentUser, noteAdded ? '' : progress.notes || '']);
           noteAdded = true;
@@ -495,8 +487,9 @@ async function analyzeProgressWithAI() {
     }
     summary += "\nProvide a friendly, insightful summary of this user's fitness progress and 2-3 actionable training tips based on this data.";
 
+    // *** BUG FIX: Changed 'analyze' to 'chat' to match the expected backend type. ***
     const response = await fetch('/.netlify/functions/ask-ai', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'analyze', payload: summary }),
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'chat', payload: summary }),
     });
     
     if (!response.ok) {

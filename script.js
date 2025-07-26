@@ -1,7 +1,9 @@
 'use strict';
 
-///////////////////////
-// 1. CONFIGURATION & GLOBAL STATE
+window.gapiLoaded = gapiLoaded;
+window.gisLoaded = gisLoaded;
+
+// Config & Global State
 const GOOGLE_CONFIG = {
   CLIENT_ID:
     '1040913543341-0vj52ims83dkcudpvh6rdtvrvr5da5nn.apps.googleusercontent.com',
@@ -10,324 +12,161 @@ const GOOGLE_CONFIG = {
 };
 
 const workoutData = {
-  1: {
-    name: 'Push Day 1',
-    bodyPart: 'Push',
-    exercises: [
-      {
-        name: 'BB Flat Bench Press',
-        sets: 4,
-        reps: '10, 8, 6, 4',
-        alternatives: [
-          'Machine bench press',
-          'incline bench press',
-          'db flat bench press',
-        ],
-      },
-      {
-        name: 'DB Incline Press',
-        sets: 3,
-        reps: '12, 8, 6',
-        alternatives: [
-          'Incline bench press',
-          'machine incline bench press',
-          'flat db bench press',
-        ],
-      },
-      {
-        name: 'DB Shoulder Press',
-        sets: 4,
-        reps: '15, 12, 10, 6',
-        alternatives: [
-          'Machine shoulder press',
-          'barbell shoulder press',
-          'shoulder front raises',
-        ],
-      },
-      {
-        name: 'Cable Straight Pushdown',
-        sets: 3,
-        reps: '15, 12, 10 + drop',
-        alternatives: [
-          'Rope pushdowns',
-          'single hand cable pushdowns',
-          'skull crushers',
-        ],
-      },
-      {
-        name: 'DB Lateral Raises',
-        sets: 4,
-        reps: '12, 10, 8, complex',
-        alternatives: ['Upright rows', 'laying lateral raises'],
-      },
-      {
-        name: 'Overhead Tricep Extension',
-        sets: 3,
-        reps: '15, 12, 10',
-        alternatives: ['Rope pushdowns', 'skull crushers'],
-      },
-      {
-        name: 'Cable Chest Fly',
-        sets: 3,
-        reps: '20, 16, 12',
-        alternatives: ['Machine fly', 'db fly'],
-      },
-    ],
-  },
-  2: {
-    name: 'Pull Day 1',
-    bodyPart: 'Pull',
-    exercises: [
-      {
-        name: 'Lat Pulldown',
-        sets: 4,
-        reps: '12, 10, 6, 6 peak',
-        alternatives: ['DB row', 'barbell row', 'pull ups'],
-      },
-      {
-        name: 'Deadlift',
-        sets: 4,
-        reps: '10, 8, 6, 4',
-        alternatives: ['Back extension', 'db deadlift'],
-      },
-      {
-        name: 'Seated Close Grip Row',
-        sets: 4,
-        reps: '12, 10, 10, 10 peak',
-        alternatives: [
-          'Row with narrow bar',
-          'row with wide bar',
-          'db and bb row',
-        ],
-      },
-      {
-        name: 'Rope Pull Overs',
-        sets: 3,
-        reps: '16, 12, 10',
-        alternatives: ['Pull over with db'],
-      },
-      {
-        name: 'DB Hammer Curls',
-        sets: 3,
-        reps: '15, 12, 10',
-        alternatives: ['DB curls', 'preacher curls'],
-      },
-      {
-        name: 'Preacher Curls',
-        sets: 4,
-        reps: '16, 12, 10, 8',
-        alternatives: ['DB curls', 'seated curls'],
-      },
-      {
-        name: 'Barbell Curls',
-        sets: 2,
-        reps: '20, 15',
-        alternatives: ['Supinated curls', 'cable curls'],
-      },
-    ],
-  },
-  3: {
-    name: 'Leg Day',
-    bodyPart: 'Legs',
-    exercises: [
-      {
-        name: 'BB Squat',
-        sets: 4,
-        reps: '15, 10, 6, 4',
-        alternatives: ['Hack squats', 'leg press'],
-      },
-      {
-        name: 'Lunges',
-        sets: 3,
-        reps: '8 strides/leg',
-        alternatives: ['Reverse squat', 'romanian deadlift'],
-      },
-      {
-        name: 'Sumo Stance Leg Press',
-        sets: 3,
-        reps: '12, 10, 8',
-        alternatives: ['Glute bridges', 'goblet squat', 'sumo squat'],
-      },
-      {
-        name: 'Hamstring Curls',
-        sets: 3,
-        reps: '15, 12, 10',
-        alternatives: ['Reverse hamstring curls'],
-      },
-      {
-        name: 'Legs Extension',
-        sets: 3,
-        reps: '15, 12, 10',
-        alternatives: ['Adductors', 'hack squat full depth'],
-      },
-      {
-        name: 'Calf Raises',
-        sets: 4,
-        reps: '25, 20, 20, 15',
-        alternatives: ['Seated calf raises'],
-      },
-    ],
-  },
-  4: {
-    name: 'Push Day 2',
-    bodyPart: 'Push',
-    exercises: [
-      {
-        name: 'BB Incline Bench',
-        sets: 2,
-        reps: '12, 10',
-        alternatives: ['Machine bench press', 'db flat bench press'],
-      },
-      {
-        name: 'Cambered Bar Front Raise',
-        sets: 3,
-        reps: '15, 12, 10',
-        alternatives: ['DB front raise', 'plate front raise'],
-      },
-      {
-        name: 'Cable Rope Face Pulls w/ Rear Delt Fly',
-        sets: 3,
-        reps: '12, 10, 8 each',
-        alternatives: ['Bent over delt fly'],
-      },
-      {
-        name: 'Lowest Angle Chest Fly',
-        sets: 3,
-        reps: '15, 12, 10',
-        alternatives: ['Machine fly', 'db fly'],
-      },
-      {
-        name: 'Front Plate Raise',
-        sets: 2,
-        reps: '20, 16',
-        alternatives: ['DB front raise'],
-      },
-      {
-        name: 'Close Grip Bench Press',
-        sets: 2,
-        reps: '15, 12',
-        alternatives: ['Tricep dips'],
-      },
-      {
-        name: 'Lateral Raises on Machine/Cable',
-        sets: 2,
-        reps: '20, 16',
-        alternatives: ['Upright rows', 'db lateral raises'],
-      },
-    ],
-  },
-  5: {
-    name: 'Pull Day 2',
-    bodyPart: 'Pull',
-    exercises: [
-      {
-        name: 'Close Grip Lat Pulldown w/ V Bar',
-        sets: 3,
-        reps: '15, 12, 10',
-        alternatives: ['DB row', 'barbell row', 'pull ups'],
-      },
-      {
-        name: 'BB Row',
-        sets: 3,
-        reps: '12, 10, 8',
-        alternatives: ['Single hand db row', 'machine row'],
-      },
-      {
-        name: 'Reverse Hand Rowing',
-        sets: 2,
-        reps: '12, 10',
-        alternatives: ['Single hand db row', 'machine row'],
-      },
-      {
-        name: 'Hyper Extension',
-        sets: 3,
-        reps: '20, 16, 14',
-        alternatives: ['Deadlift', 't-bar row'],
-      },
-      {
-        name: 'Incline Curls',
-        sets: 3,
-        reps: '15, 12, 10',
-        alternatives: ['Hammer curls', 'db curls'],
-      },
-      {
-        name: 'Machine Rope Curls',
-        sets: 3,
-        reps: '15, 12, 10',
-        alternatives: ['Hammer curls', 'db curls'],
-      },
-    ],
-  },
-  6: {
-    name: 'Arms Day',
-    bodyPart: 'Arms',
-    exercises: [
-      {
-        name: 'Superset: Cable EZ Bar Curls / Tricep Pushdowns',
-        sets: 4,
-        reps: '15-15...',
-        alternatives: [],
-      },
-      {
-        name: 'Superset: Preacher Curls / Overhead Tricep Extension',
-        sets: 3,
-        reps: '12-12...',
-        alternatives: [],
-      },
-      {
-        name: 'Superset: Wide Grip Bar Curls / Rope Pushdowns',
-        sets: 2,
-        reps: '5p 10f - 10...',
-        alternatives: [],
-      },
-      {
-        name: 'Superset: Hammer Curls Drop Set / Single Arm Tricep',
-        sets: 2,
-        reps: '(15, 12, 10)...',
-        alternatives: [],
-      },
-    ],
-  },
+  1: { name: 'Push Day 1', bodyPart: 'Push', exercises: [
+    { name: 'BB Flat Bench Press', sets: 4, reps: '10, 8, 6, 4', alternatives: ['Machine bench press', 'incline bench press', 'db flat bench press'] },
+    { name: 'DB Incline Press', sets: 3, reps: '12, 8, 6', alternatives: ['Incline bench press', 'machine incline bench press', 'flat db bench press'] },
+    { name: 'DB Shoulder Press', sets: 4, reps: '15, 12, 10, 6', alternatives: ['Machine shoulder press', 'barbell shoulder press', 'shoulder front raises'] },
+    { name: 'Cable Straight Pushdown', sets: 3, reps: '15, 12, 10 + drop', alternatives: ['Rope pushdowns', 'single hand cable pushdowns', 'skull crushers'] },
+    { name: 'DB Lateral Raises', sets: 4, reps: '12, 10, 8, complex', alternatives: ['Upright rows', 'laying lateral raises'] },
+    { name: 'Overhead Tricep Extension', sets: 3, reps: '15, 12, 10', alternatives: ['Rope pushdowns', 'skull crushers'] },
+    { name: 'Cable Chest Fly', sets: 3, reps: '20, 16, 12', alternatives: ['Machine fly', 'db fly'] },
+  ]},
+  2: { name: 'Pull Day 1', bodyPart: 'Pull', exercises: [
+    { name: 'Lat Pulldown', sets: 4, reps: '12, 10, 6, 6 peak', alternatives: ['DB row', 'barbell row', 'pull ups'] },
+    { name: 'Deadlift', sets: 4, reps: '10, 8, 6, 4', alternatives: ['Back extension', 'db deadlift'] },
+    { name: 'Seated Close Grip Row', sets: 4, reps: '12, 10, 10, 10 peak', alternatives: ['Row with narrow bar', 'row with wide bar', 'db and bb row'] },
+    { name: 'Rope Pull Overs', sets: 3, reps: '16, 12, 10', alternatives: ['Pull over with db'] },
+    { name: 'DB Hammer Curls', sets: 3, reps: '15, 12, 10', alternatives: ['DB curls', 'preacher curls'] },
+    { name: 'Preacher Curls', sets: 4, reps: '16, 12, 10, 8', alternatives: ['DB curls', 'seated curls'] },
+    { name: 'Barbell Curls', sets: 2, reps: '20, 15', alternatives: ['Supinated curls', 'cable curls'] },
+  ]},
+  3: { name: 'Leg Day', bodyPart: 'Legs', exercises: [
+    { name: 'BB Squat', sets: 4, reps: '15, 10, 6, 4', alternatives: ['Hack squats', 'leg press'] },
+    { name: 'Lunges', sets: 3, reps: '8 strides/leg', alternatives: ['Reverse squat', 'romanian deadlift'] },
+    { name: 'Sumo Stance Leg Press', sets: 3, reps: '12, 10, 8', alternatives: ['Glute bridges', 'goblet squat', 'sumo squat'] },
+    { name: 'Hamstring Curls', sets: 3, reps: '15, 12, 10', alternatives: ['Reverse hamstring curls'] },
+    { name: 'Legs Extension', sets: 3, reps: '15, 12, 10', alternatives: ['Adductors', 'hack squat full depth'] },
+    { name: 'Calf Raises', sets: 4, reps: '25, 20, 20, 15', alternatives: ['Seated calf raises'] },
+  ]},
+  4: { name: 'Push Day 2', bodyPart: 'Push', exercises: [
+    { name: 'BB Incline Bench', sets: 2, reps: '12, 10', alternatives: ['Machine bench press', 'db flat bench press'] },
+    { name: 'Cambered Bar Front Raise', sets: 3, reps: '15, 12, 10', alternatives: ['DB front raise', 'plate front raise'] },
+    { name: 'Cable Rope Face Pulls w/ Rear Delt Fly', sets: 3, reps: '12, 10, 8 each', alternatives: ['Bent over delt fly'] },
+    { name: 'Lowest Angle Chest Fly', sets: 3, reps: '15, 12, 10', alternatives: ['Machine fly', 'db fly'] },
+    { name: 'Front Plate Raise', sets: 2, reps: '20, 16', alternatives: ['DB front raise'] },
+    { name: 'Close Grip Bench Press', sets: 2, reps: '15, 12', alternatives: ['Tricep dips'] },
+    { name: 'Lateral Raises on Machine/Cable', sets: 2, reps: '20, 16', alternatives: ['Upright rows', 'db lateral raises'] },
+  ]},
+  5: { name: 'Pull Day 2', bodyPart: 'Pull', exercises: [
+    { name: 'Close Grip Lat Pulldown w/ V Bar', sets: 3, reps: '15, 12, 10', alternatives: ['DB row', 'barbell row', 'pull ups'] },
+    { name: 'BB Row', sets: 3, reps: '12, 10, 8', alternatives: ['Single hand db row', 'machine row'] },
+    { name: 'Reverse Hand Rowing', sets: 2, reps: '12, 10', alternatives: ['Single hand db row', 'machine row'] },
+    { name: 'Hyper Extension', sets: 3, reps: '20, 16, 14', alternatives: ['Deadlift', 't-bar row'] },
+    { name: 'Incline Curls', sets: 3, reps: '15, 12, 10', alternatives: ['Hammer curls', 'db curls'] },
+    { name: 'Machine Rope Curls', sets: 3, reps: '15, 12, 10', alternatives: ['Hammer curls', 'db curls'] },
+  ]},
+  6: { name: 'Arms Day', bodyPart: 'Arms', exercises: [
+    { name: 'Superset: Cable EZ Bar Curls / Tricep Pushdowns', sets: 4, reps: '15-15...', alternatives: [] },
+    { name: 'Superset: Preacher Curls / Overhead Tricep Extension', sets: 3, reps: '12-12...', alternatives: [] },
+    { name: 'Superset: Wide Grip Bar Curls / Rope Pushdowns', sets: 2, reps: '5p 10f - 10...', alternatives: [] },
+    { name: 'Superset: Hammer Curls Drop Set / Single Arm Tricep', sets: 2, reps: '(15, 12, 10)...', alternatives: [] },
+  ]},
 };
 
-let currentUser = 'Harjas';
+let currentUser = localStorage.getItem('currentUser') || 'Harjas';
 let currentDay = 1;
 let workoutProgress = {};
-let gapiInited = false;
-let gisInited = false;
-let tokenClient;
+let gapiInited = false, gisInited = false, tokenClient, isApiReady = false, silentAuthTried = false;
 let sheetData = [];
 let chartInstance = null;
-let isApiReady = false;
-let silentAuthTried = false;
 
-///////////////////////////////////////////////////////
-// 2. HELPER FUNCTIONS
+// API Load callbacks for global scope
+function gapiLoaded() {
+  gapi.load('client', async () => {
+    try {
+      await gapi.client.init({ discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'] });
+      gapiInited = true;
+      checkApiReady();
+    } catch (e) {
+      showNotification('Failed to initialize Google Sheets API.', 'error');
+      console.error(e);
+    }
+  });
+}
+function gisLoaded() {
+  try {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CONFIG.CLIENT_ID,
+      scope: GOOGLE_CONFIG.SCOPES,
+      callback: handleAuthResponse,
+    });
+    gisInited = true;
+    checkApiReady();
+  } catch (e) {
+    showNotification('Failed to initialize Google Sign-In.', 'error');
+    console.error(e);
+  }
+}
+window.gapiLoaded = gapiLoaded;
+window.gisLoaded = gisLoaded;
 
-// Robust date parser for spreadsheet date strings
-function parseSheetDate(d) {
-  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return new Date(d + 'T00:00:00');
-  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(d)) return new Date(d);
-  const dt = new Date(d);
-  return isNaN(dt) ? new Date() : dt;
+function checkApiReady() {
+  if (gapiInited && gisInited) {
+    isApiReady = true;
+    updateAuthorizeButtons(true, 'Authorize');
+    if (!silentAuthTried) {
+      silentAuthTried = true;
+      trySilentAuth();
+    }
+  }
+}
+function trySilentAuth() {
+  if (tokenClient) tokenClient.requestAccessToken({ prompt: 'none' });
+}
+function handleAuthClick() {
+  if (!isApiReady) {
+    showNotification('Google API not ready yet. Please wait.', 'error');
+    return;
+  }
+  tokenClient.requestAccessToken({ prompt: 'consent' });
+}
+function handleAuthResponse(resp) {
+  if (resp.error) {
+    showNotification('Authorization failed. Please try again.', 'error');
+    updateSigninStatus(false);
+    return;
+  }
+  updateSigninStatus(true);
+}
+function updateAuthorizeButtons(enabled, text) {
+  document.querySelectorAll('[id^="authorizeBtn"]').forEach((btn) => {
+    btn.disabled = !enabled;
+    btn.innerHTML = `<i class="fab fa-google"></i> ${text}`;
+  });
+}
+function updateSigninStatus(signedIn) {
+  document.querySelectorAll('[id^="authorizeBtn"]').forEach(btn => btn.classList.toggle('hidden', signedIn));
+  document.querySelectorAll('[id^="syncBtn"], #globalSyncBtn').forEach(btn => btn.classList.toggle('hidden', !signedIn));
+
+  const pending = hasPendingData();
+  document.getElementById('globalSyncBtn').disabled = !pending;
+  document.querySelectorAll('#syncBtnHome, #syncBtnWorkout').forEach(btn => btn.disabled = !pending);
+
+  ['analyzeProgressBtn', 'clearSheetBtn', 'syncBtnDashboard'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = !signedIn;
+  });
+
+  if (signedIn && document.getElementById('dashboardScreen')?.classList.contains('active')) {
+    fetchDashboardData(false);
+  } else if (!signedIn) {
+    const dashContent = document.getElementById('dashboardContent');
+    if (dashContent) dashContent.innerHTML = `<div class="dashboard-card"><p>Please authorize to view dashboard.</p></div>`;
+  }
 }
 
-// Detect if any workout set is completed and pending sync
 function hasPendingData() {
   for (const day of Object.values(workoutProgress)) {
     if (day.sets) {
       for (const exercise of Object.values(day.sets)) {
         for (const set of Object.values(exercise)) {
-          if (typeof set === 'object' && set.completed) {
-            return true;
-          }
+          if (typeof set === 'object' && set.completed) return true;
         }
       }
     }
   }
   return false;
 }
-
 function showNotification(message, type = 'info') {
   const el = document.createElement('div');
   el.className = `notification ${type}`;
@@ -343,133 +182,16 @@ function showNotification(message, type = 'info') {
   }, 4000);
 }
 
-// Update state of Authorize buttons
-function updateAuthorizeButtons(enabled, text) {
-  document.querySelectorAll('[id^="authorizeBtn"]').forEach((btn) => {
-    btn.disabled = !enabled;
-    btn.innerHTML = `<i class="fab fa-google"></i> ${text}`;
-  });
-}
-
-///////////////////////////////////////////////////////
-// 3. GOOGLE API & AUTH FLOW
-
-window.gapiLoaded = () => {
-  gapi.load('client', async () => {
-    try {
-      await gapi.client.init({
-        discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
-      });
-      gapiInited = true;
-      checkApiReady();
-    } catch (e) {
-      showNotification(
-        'Critical Error: Could not initialize Google Sheets API.',
-        'error'
-      );
-      console.error(e);
-    }
-  });
-};
-
-window.gisLoaded = () => {
-  try {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: GOOGLE_CONFIG.CLIENT_ID,
-      scope: GOOGLE_CONFIG.SCOPES,
-      callback: handleAuthResponse,
-    });
-    gisInited = true;
-    checkApiReady();
-  } catch (e) {
-    showNotification('Critical Error: Could not initialize Google Sign-In.', 'error');
-    console.error(e);
-  }
-};
-
-function checkApiReady() {
-  if (gapiInited && gisInited) {
-    isApiReady = true;
-    updateAuthorizeButtons(true, 'Authorize');
-    if (!silentAuthTried) {
-      silentAuthTried = true;
-      trySilentAuth();
-    }
-  }
-}
-
-// Try silent authorization to speed up UX
-function trySilentAuth() {
-  if (!tokenClient) return;
-  tokenClient.requestAccessToken({ prompt: 'none' });
-}
-
-function handleAuthClick() {
-  if (!isApiReady) {
-    showNotification('Google API is not ready. Please wait and try again.', 'error');
-    return;
-  }
-  tokenClient.requestAccessToken({ prompt: 'consent' });
-}
-
-function handleAuthResponse(resp) {
-  if (resp.error) {
-    updateSigninStatus(false);
-    showNotification('Authorization failed or was denied.', 'error');
-    return;
-  }
-  updateSigninStatus(true);
-}
-
-function updateSigninStatus(isSignedIn) {
-  document.querySelectorAll('[id^="authorizeBtn"]').forEach((btn) => {
-    btn.classList.toggle('hidden', isSignedIn);
-  });
-  document.querySelectorAll('[id^="syncBtn"], #globalSyncBtn').forEach((btn) => {
-    btn.classList.toggle('hidden', !isSignedIn);
-  });
-
-  const pending = hasPendingData();
-  document.getElementById('globalSyncBtn').disabled = !pending;
-  document.querySelectorAll('#syncBtnHome, #syncBtnWorkout').forEach((btn) => {
-    btn.disabled = !pending;
-  });
-
-  const analyzeBtn = document.getElementById('analyzeProgressBtn');
-  if (analyzeBtn) analyzeBtn.disabled = !isSignedIn;
-  const clearBtn = document.getElementById('clearSheetBtn');
-  if (clearBtn) clearBtn.disabled = !isSignedIn;
-  const syncDashBtn = document.getElementById('syncBtnDashboard');
-  if (syncDashBtn) syncDashBtn.disabled = !isSignedIn;
-
-  if (isSignedIn && document.getElementById('dashboardScreen')?.classList.contains('active')) {
-    fetchDashboardData(false);
-  } else if (!isSignedIn) {
-    const dashContent = document.getElementById('dashboardContent');
-    if (dashContent) dashContent.innerHTML = `<div class="dashboard-card"><p>Please authorize to view dashboard.</p></div>`;
-  }
-}
-
-///////////////////////////////////////////////////////
-// 4. LOCAL STORAGE
-
+// Load & Save workout progress locally
 function saveWorkoutProgress() {
   localStorage.setItem('workoutProgress', JSON.stringify(workoutProgress));
   if (gapi.client.getToken()) updateSigninStatus(true);
 }
-
 function loadWorkoutProgress() {
-  try {
-    workoutProgress = JSON.parse(localStorage.getItem('workoutProgress')) || {};
-  } catch {
-    workoutProgress = {};
-  }
+  try { workoutProgress = JSON.parse(localStorage.getItem('workoutProgress'))||{}; } catch { workoutProgress = {}; }
 }
 
-///////////////////////////////////////////////////////
-// 5. WORKOUT UI LOGIC
-
-// Render workout list on home screen
+// UI: Render Home workout list
 function renderHome() {
   const grid = document.getElementById('workoutGrid');
   if (!grid) return;
@@ -487,7 +209,7 @@ function renderHome() {
     grid.appendChild(card);
   });
 }
-
+// UI: Load workout detail UI
 function loadWorkoutUI() {
   const workout = workoutData[currentDay];
   if (!workout) return;
@@ -498,31 +220,20 @@ function loadWorkoutUI() {
   if (!container) return;
   container.innerHTML = '';
 
-  const progress = workoutProgress[currentDay] || {
-    date: new Date().toISOString().slice(0, 10),
-    sets: {},
-    notes: '',
-  };
+  const progress = workoutProgress[currentDay] || { date: new Date().toISOString().slice(0, 10), sets: {}, notes: '' };
 
   workout.exercises.forEach((exercise, exIndex) => {
     let optionsHtml = `<option value="${exercise.name}">${exercise.name}</option>`;
-    exercise.alternatives?.forEach(a => {
-      optionsHtml += `<option value="${a}">${a}</option>`;
-    });
+    exercise.alternatives?.forEach(a => optionsHtml += `<option value="${a}">${a}</option>`);
 
-    const selectedEx =
-      progress.sets?.[exIndex]?.selectedExercise || exercise.name;
-    const selectHtml = `<select class="exercise-select" data-ex="${exIndex}">${optionsHtml.replace(
-      `value="${selectedEx}"`,
-      `value="${selectedEx}" selected`
-    )}</select>`;
+    const selectedEx = progress.sets?.[exIndex]?.selectedExercise || exercise.name;
+    const selectHtml = `<select class="exercise-select" data-ex="${exIndex}">${optionsHtml.replace(`value="${selectedEx}"`, `value="${selectedEx}" selected`)}</select>`;
 
     let setsHtml = '';
     for (let setIndex = 0; setIndex < exercise.sets; setIndex++) {
       const setProg = progress.sets?.[exIndex]?.[setIndex] || {};
       setsHtml += `<div class="set-row ${setProg.completed ? 'completed' : ''}" data-ex="${exIndex}" data-set="${setIndex}">
-        <input type="checkbox" class="set-checkbox" ${setProg.completed ? 'checked' : ''}><span>Set ${
-        setIndex + 1}</span>
+        <input type="checkbox" class="set-checkbox" ${setProg.completed ? 'checked' : ''}><span>Set ${setIndex + 1}</span>
         <input type="number" class="set-input" placeholder="kg" value="${setProg.weight || ''}">
         <input type="number" class="set-input" placeholder="reps" value="${setProg.reps || ''}">
       </div>`;
@@ -533,13 +244,8 @@ function loadWorkoutUI() {
   const notesEl = document.getElementById('workoutNotes');
   if (notesEl) notesEl.value = progress.notes || '';
 
-  // Attach event handlers
-  container.querySelectorAll('.set-checkbox, .set-input').forEach(el => {
-    el.addEventListener('change', handleSetChange);
-  });
-  container.querySelectorAll('.exercise-select').forEach(sel => {
-    sel.addEventListener('change', handleExerciseChange);
-  });
+  container.querySelectorAll('.set-checkbox, .set-input').forEach(el => el.addEventListener('change', handleSetChange));
+  container.querySelectorAll('.exercise-select').forEach(s => s.addEventListener('change', handleExerciseChange));
 }
 
 function handleExerciseChange(e) {
@@ -557,7 +263,6 @@ function handleSetChange(e) {
   const set = row.dataset.set;
   if (!workoutProgress[currentDay]) workoutProgress[currentDay] = { date: new Date().toISOString().slice(0, 10), sets: {}, notes: '' };
   if (!workoutProgress[currentDay].sets[ex]) workoutProgress[currentDay].sets[ex] = {};
-
   const completed = row.querySelector('.set-checkbox').checked;
   workoutProgress[currentDay].sets[ex][set] = {
     completed,
@@ -583,9 +288,7 @@ function resetCurrentWorkout() {
   }
 }
 
-///////////////////////////////////////////////////////
-// 6. SYNC LOGIC
-
+// Prepare data rows for Google Sheets sync
 function prepareDataForSheets() {
   const rows = [];
   for (const dayKey in workoutProgress) {
@@ -619,6 +322,7 @@ function prepareDataForSheets() {
   return rows;
 }
 
+// Sync workout data to sheet
 async function syncWorkoutData() {
   if (!gapi.client?.getToken()) {
     showNotification("Please authorize first.", "error");
@@ -639,26 +343,19 @@ async function syncWorkoutData() {
       resource: { values: rows },
     });
     if (!response || (response.status && response.status >= 400)) {
-      throw new Error("Google Sheets API returned error");
+      throw new Error("Google Sheets API error");
     }
     showNotification("Workouts synced successfully!", "success");
-    // Delete synced days from local storage
     const syncedDays = [...new Set(rows.map(row => Object.keys(workoutData).find(day => workoutData[day].name === row[1])))];
-    syncedDays.forEach(day => {
-      if (day && workoutProgress[day]) {
-        delete workoutProgress[day];
-      }
-    });
+    syncedDays.forEach(day => { if (day && workoutProgress[day]) delete workoutProgress[day]; });
     saveWorkoutProgress();
-  } catch (error) {
+  } catch (e) {
     showNotification("Sync failed. Please check the console.", "error");
-    console.error("Sync error:", error);
+    console.error(e);
   }
 }
 
-///////////////////////////////////////////////////////
-// 7. DASHBOARD LOGIC
-
+// Fetch dashboard data
 async function fetchDashboardData(showNotify = true) {
   if (!gapi.client?.getToken()) return;
   try {
@@ -666,7 +363,7 @@ async function fetchDashboardData(showNotify = true) {
       spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID,
       range: 'WorkoutLog!A2:H',
     });
-    sheetData = (response.result.values || []).map((row) => {
+    sheetData = (response.result.values || []).map(row => {
       const dayName = row[1];
       const dayKey = Object.keys(workoutData).find(d => workoutData[d].name === dayName);
       return {
@@ -684,16 +381,16 @@ async function fetchDashboardData(showNotify = true) {
     if (showNotify) showNotification("Dashboard data synced.", "success");
     populateBodyPartFilter();
     renderDashboard();
-  } catch (err) {
+  } catch (e) {
     if (showNotify) showNotification("Failed to fetch dashboard data.", "error");
-    console.error("Fetch dashboard error:", err);
+    console.error(e);
   }
 }
 
 function populateBodyPartFilter() {
-  const bodyParts = [...new Set(sheetData.filter(row => row.user === currentUser).map(row => row.bodyPart))].filter(Boolean);
-  const bodyFilter = document.getElementById("bodyPartFilter");
+  const bodyFilter = document.getElementById('bodyPartFilter');
   if (!bodyFilter) return;
+  const bodyParts = [...new Set(sheetData.filter(r => r.user === currentUser).map(r => r.bodyPart))].filter(Boolean);
   bodyFilter.innerHTML = '<option value="all">All Body Parts</option>';
   bodyParts.forEach(bp => {
     bodyFilter.innerHTML += `<option value="${bp}">${bp}</option>`;
@@ -702,22 +399,22 @@ function populateBodyPartFilter() {
 }
 
 function populateExerciseFilter() {
-  const bodyFilter = document.getElementById("bodyPartFilter");
-  const exerciseFilter = document.getElementById("exerciseFilter");
+  const bodyFilter = document.getElementById('bodyPartFilter');
+  const exerciseFilter = document.getElementById('exerciseFilter');
   if (!bodyFilter || !exerciseFilter) return;
   const bodyPart = bodyFilter.value;
-  const exercises = [...new Set(sheetData.filter(row => row.user === currentUser && (bodyPart === "all" || row.bodyPart === bodyPart)).map(row => row.exercise))].filter(Boolean);
+  const exercises = [...new Set(sheetData.filter(r => r.user === currentUser && (bodyPart === 'all' || r.bodyPart === bodyPart)).map(r => r.exercise))].filter(Boolean);
   exerciseFilter.innerHTML = '<option value="all">All Exercises</option>';
   exercises.forEach(ex => {
     exerciseFilter.innerHTML += `<option value="${ex}">${ex}</option>`;
   });
-  exerciseFilter.disabled = exercises.length === 0 || bodyPart === "all";
+  exerciseFilter.disabled = exercises.length === 0 || bodyPart === 'all';
 }
 
 function renderDashboard() {
-  const bodyFilter = document.getElementById("bodyPartFilter");
-  const exerciseFilter = document.getElementById("exerciseFilter");
-  const dateRangeFilter = document.getElementById("dateRangeFilter");
+  const bodyFilter = document.getElementById('bodyPartFilter');
+  const exerciseFilter = document.getElementById('exerciseFilter');
+  const dateRangeFilter = document.getElementById('dateRangeFilter');
   if (!bodyFilter || !exerciseFilter || !dateRangeFilter) return;
 
   const bodyPart = bodyFilter.value;
@@ -725,16 +422,15 @@ function renderDashboard() {
   const dateRange = dateRangeFilter.value;
 
   let filteredData = sheetData.filter(row => {
-    const isUser = row.user === currentUser;
-    const isDate = dateRange === "all" || (new Date() - row.date) / 86400000 <= parseInt(dateRange);
-    const isBodyPart = bodyPart === "all" || row.bodyPart === bodyPart;
-    return isUser && isDate && isBodyPart;
+    const userCheck = row.user === currentUser;
+    const dateCheck = dateRange === 'all' || (new Date() - row.date) / 86400000 <= parseInt(dateRange);
+    const bodyCheck = bodyPart === 'all' || row.bodyPart === bodyPart;
+    return userCheck && dateCheck && bodyCheck;
   });
-
-  if (exercise !== "all") filteredData = filteredData.filter(row => row.exercise === exercise);
+  if (exercise !== 'all') filteredData = filteredData.filter(row => row.exercise === exercise);
 
   if (filteredData.length === 0) {
-    const dashContent = document.getElementById("dashboardContent");
+    const dashContent = document.getElementById('dashboardContent');
     if (dashContent) dashContent.innerHTML = `<div class="dashboard-card"><p>No data found for this selection.</p></div>`;
     if (chartInstance) {
       chartInstance.destroy();
@@ -746,10 +442,11 @@ function renderDashboard() {
   const e1RM = (w, r) => (r > 0 ? w * (1 + r / 30) : 0);
   filteredData.forEach(row => row.e1RM = e1RM(row.weight, row.reps));
 
-  const bestSet = filteredData.reduce((max, row) => (row.e1RM > max.e1RM ? row : max), {e1RM:0});
+  const bestSet = filteredData.reduce((max, row) => (row.e1RM > max.e1RM ? row : max), { e1RM: 0 });
 
-  const dashContent = document.getElementById("dashboardContent");
+  const dashContent = document.getElementById('dashboardContent');
   if (!dashContent) return;
+
   dashContent.innerHTML = `
     <div class="dashboard-card">
       <h3>Best Lift</h3>
@@ -766,49 +463,45 @@ function renderDashboard() {
       </div>
     </div>`;
 
-  let chartData = [];
-  let label = "Estimated 1RM (kg)";
+  let chartData;
+  let label = 'Estimated 1RM (kg)';
 
-  if (exercise === "all" && bodyPart !== "all") {
+  if (exercise === 'all' && bodyPart !== 'all') {
     label = `Average 1RM for ${bodyPart}`;
     const grouped = filteredData.reduce((acc, cur) => {
-      const isoDate = cur.date.toISOString().slice(0, 10);
-      if (!acc[isoDate]) acc[isoDate] = [];
-      acc[isoDate].push(cur.e1RM);
+      const dateKey = cur.date.toISOString().slice(0, 10);
+      if (!acc[dateKey]) acc[dateKey] = [];
+      acc[dateKey].push(cur.e1RM);
       return acc;
     }, {});
-    chartData = Object.entries(grouped).map(([dateStr, vals]) => ({
-      date: new Date(dateStr + "T00:00:00"),
-      e1RM: vals.reduce((a, b) => a + b, 0) / vals.length,
-    }));
+    chartData = Object.entries(grouped).map(([dateStr, vals]) => {
+      return { date: new Date(dateStr + 'T00:00:00'), e1RM: vals.reduce((a,b)=>a+b,0)/vals.length };
+    });
   } else {
     chartData = filteredData;
-    if (exercise !== "all") label = `1RM for ${exercise}`;
+    if (exercise !== 'all') label = `1RM for ${exercise}`;
   }
 
-  renderProgressChart(chartData, "progressChart", label);
+  renderProgressChart(chartData, 'progressChart', label);
 }
 
 function renderProgressChart(data, canvasId, label) {
-  if (!data || data.length === 0) return;
-  const ctx = document.getElementById(canvasId)?.getContext("2d");
+  const ctx = document.getElementById(canvasId)?.getContext('2d');
   if (!ctx) return;
   if (chartInstance) chartInstance.destroy();
 
   chartInstance = new Chart(ctx, {
-    type: "line",
+    type: 'line',
     data: {
-      labels: data.map((d) => d.date.toLocaleDateString()),
-      datasets: [
-        {
-          label,
-          data: data.map((d) => d.e1RM.toFixed(1)),
-          borderColor: "var(--primary-color)",
-          tension: 0.15,
-          fill: true,
-          backgroundColor: "rgba(11,87,208,0.1)",
-        },
-      ],
+      labels: data.map(d => d.date.toLocaleDateString('en-GB')),
+      datasets: [{
+        label,
+        data: data.map(d => d.e1RM.toFixed(1)),
+        borderColor: 'var(--primary-color)',
+        fill: true,
+        backgroundColor: 'rgba(11, 87, 208, 0.1)',
+        tension: 0.15,
+      }],
     },
     options: {
       responsive: true,
@@ -822,21 +515,69 @@ function renderProgressChart(data, canvasId, label) {
   });
 }
 
-//////////////////////////////////////////////////////
-// 8. CLEAR GOOGLE SHEET DATA
+// AI Analysis Implementation
+async function analyzeProgressWithAI() {
+  const analyzeBtn = document.getElementById('analyzeProgressBtn');
+  if (analyzeBtn) analyzeBtn.disabled = true;
 
+  showNotification('Analyzing progress...', 'info');
+
+  if (!sheetData || sheetData.length === 0) {
+    showNotification('No workout data found to analyze.', 'error');
+    if (analyzeBtn) analyzeBtn.disabled = false;
+    return;
+  }
+
+  try {
+    // Build summary text for AI prompt
+    let summary = `User: ${currentUser}\nWorkout sessions: ${sheetData.length}\n\nBest Lifts:\n`;
+
+    const e1RM = (w, r) => (r > 0 ? w * (1 + r / 30) : 0);
+    const bestLifts = {};
+
+    sheetData.forEach(row => {
+      if (row.user !== currentUser) return;
+      const key = row.bodyPart + ' - ' + row.exercise;
+      const curBest = bestLifts[key];
+      let est1RM = e1RM(row.weight, row.reps);
+      if (!curBest || est1RM > curBest.e1RM) {
+        bestLifts[key] = {
+          weight: row.weight, reps: row.reps, e1RM: est1RM,
+          date: row.date.toLocaleDateString('en-GB'),
+        };
+      }
+    });
+    for (const [key, val] of Object.entries(bestLifts)) {
+      summary += `${key}: ${val.weight}kg x ${val.reps} reps (estimated 1RM: ${val.e1RM.toFixed(1)}kg) on ${val.date}\n`;
+    }
+    summary += "\nProvide a summary of this user's fitness progress and tips for improvement.";
+
+    const response = await fetch('/.netlify/functions/ask-ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'analyze', payload: summary }),
+    });
+
+    if (!response.ok) throw new Error('AI analysis failed');
+    const data = await response.json();
+
+    alert(`AI Analysis:\n\n${data.message}`);
+
+  } catch (e) {
+    console.error('AI analysis error:', e);
+    showNotification('Failed to perform AI analysis. Please try later.', 'error');
+  } finally {
+    if (analyzeBtn) analyzeBtn.disabled = false;
+  }
+}
+
+// Clear Google Sheet data
 async function clearGoogleSheet() {
   if (!gapi.client?.getToken()) {
     showNotification("Please authorize first.", "error");
     return;
   }
-  if (
-    !confirm(
-      "Are you sure you want to delete ALL data from the Google Sheet? This action cannot be undone."
-    )
-  )
-    return;
-
+  if (!confirm("Are you sure you want to delete ALL data from the Google Sheet? This action cannot be undone.")) return;
   showNotification("Clearing sheet data...", "info");
   try {
     await gapi.client.sheets.spreadsheets.values.clear({
@@ -846,115 +587,48 @@ async function clearGoogleSheet() {
     sheetData = [];
     populateBodyPartFilter();
     renderDashboard();
-    showNotification("All data has been cleared from your Google Sheet.", "success");
+    showNotification("All data cleared from Google Sheet.", "success");
   } catch (err) {
-    showNotification("Failed to clear sheet data. Check console.", "error");
+    showNotification("Failed to clear sheet data.", "error");
     console.error("Clear sheet error:", err);
   }
 }
 
-//////////////////////////////////////////////////////
-// 9. UI & USER MANAGEMENT
-
+// User functions
 function loadCurrentUser() {
-  const stored = localStorage.getItem("currentUser");
-  currentUser = stored || currentUser;
-  document.querySelectorAll(".user-card").forEach((c) => {
-    c.classList.toggle("active", c.dataset.user === currentUser);
-  });
-  const workoutTitle = document.getElementById("workout-section-title");
-  if (workoutTitle) workoutTitle.textContent = `Select Workout for ${currentUser}`;
+  document.querySelectorAll('.user-card').forEach(c =>
+    c.classList.toggle('active', c.dataset.user === currentUser));
+  const wsTitle = document.getElementById('workout-section-title');
+  if (wsTitle) wsTitle.textContent = `Select Workout for ${currentUser}`;
 }
 
 function selectUser(user) {
   if (!user) return;
   currentUser = user;
-  localStorage.setItem("currentUser", user);
+  localStorage.setItem('currentUser', user);
   loadCurrentUser();
-  if (
-    document.getElementById("dashboardScreen")?.classList.contains("active") &&
-    isApiReady &&
-    gapi.client?.getToken()
-  ) {
+  if (document.getElementById('dashboardScreen')?.classList.contains('active') &&
+      isApiReady && gapi.client?.getToken()) {
     fetchDashboardData(false);
   }
 }
 
-//////////////////////////////////////////////////////
-// 10. AI Chat placeholders
-
-async function analyzeProgressWithAI() {
-  showNotification("AI Analysis coming soon!", "info");
+// Page navigation and event handling
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId)?.classList.add('active');
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.classList.toggle('active', link.dataset.page === pageId);
+  });
+  if (pageId === 'dashboardScreen' && isApiReady && gapi.client?.getToken()) fetchDashboardData(false);
 }
 
-async function sendChatMessage() {
-  const inputElem = document.getElementById("chatInput");
-  if (!inputElem) return;
-  const userMessage = inputElem.value.trim();
-  if (!userMessage) return;
-  addChatMessage(userMessage, "user");
-  inputElem.value = "";
-  addChatMessage("<i>AI is thinking...</i>", "ai");
-  try {
-    const response = await fetch("/.netlify/functions/ask-ai", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "chat", payload: userMessage }),
-    });
-    if (!response.ok) throw new Error("Function Error");
-    const data = await response.json();
-    document.querySelector(".ai-message:last-child")?.remove();
-    addChatMessage(
-      data.message.replace(/\n/g, "<br>").replace(/\*\*/g, "<strong>"),
-      "ai"
-    );
-  } catch {
-    document.querySelector(".ai-message:last-child")?.remove();
-    addChatMessage("Sorry, I'm having trouble connecting right now.", "ai");
-  }
-}
-
-function addChatMessage(message, sender) {
-  const container = document.getElementById("chatMessages");
-  if (!container) return;
-  const div = document.createElement("div");
-  div.className = `${sender}-message`;
-  div.innerHTML = `<p>${message}</p>`;
-  container.appendChild(div);
-  container.scrollTop = container.scrollHeight;
-}
-
-//////////////////////////////////////////////////////
-// 11. PAGE NAV / INIT
-
-function showPage(page) {
-  document.querySelectorAll(".page").forEach((p) => p.classList.remove("active"));
-  document.getElementById(page)?.classList.add("active");
-  document.querySelectorAll(".nav-link").forEach((link) =>
-    link.classList.toggle("active", link.dataset.page === page)
-  );
-  if (page === "dashboardScreen" && isApiReady && gapi.client?.getToken()) {
-    fetchDashboardData(false);
-  }
-}
-
-function syncOrFetchData(evt) {
-  if (evt.currentTarget.id.includes("Dashboard")) fetchDashboardData(true);
+function syncOrFetchData(e) {
+  if (e.currentTarget.id.includes('Dashboard')) fetchDashboardData(true);
   else syncWorkoutData();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  loadCurrentUser();
-  try {
-    workoutProgress = JSON.parse(localStorage.getItem("workoutProgress")) || {};
-  } catch {
-    workoutProgress = {};
-  }
-  renderHome();
-  // Setup event listeners last
-  setupEventListeners();
-});
-
+// Setup event listeners on DOM ready
 function setupEventListeners() {
   document.querySelectorAll('.nav-link').forEach(link =>
     link.addEventListener('click', e => {
@@ -966,39 +640,64 @@ function setupEventListeners() {
     card.addEventListener('click', () => selectUser(card.dataset.user)));
 
   document.getElementById('backToHomeBtn')?.addEventListener('click', () => showPage('homeScreen'));
-
-  document.querySelectorAll('[id^="authorizeBtn"]').forEach(btn =>
-    btn.addEventListener('click', handleAuthClick));
-
-  document.querySelectorAll('[id^="syncBtn"], #globalSyncBtn').forEach(btn =>
-    btn.addEventListener('click', syncOrFetchData));
-
+  document.querySelectorAll('[id^="authorizeBtn"]').forEach(btn => btn.addEventListener('click', handleAuthClick));
+  document.querySelectorAll('[id^="syncBtn"], #globalSyncBtn').forEach(btn => btn.addEventListener('click', syncOrFetchData));
   document.getElementById('resetWorkoutBtn')?.addEventListener('click', resetCurrentWorkout);
-
   document.getElementById('workoutNotes')?.addEventListener('input', saveNotes);
-
   document.getElementById('analyzeProgressBtn')?.addEventListener('click', analyzeProgressWithAI);
-
   document.getElementById('clearSheetBtn')?.addEventListener('click', clearGoogleSheet);
-
   document.getElementById('dateRangeFilter')?.addEventListener('change', renderDashboard);
-
   document.getElementById('bodyPartFilter')?.addEventListener('change', () => {
     populateExerciseFilter();
     renderDashboard();
   });
-
   document.getElementById('exerciseFilter')?.addEventListener('change', renderDashboard);
-
-  document.getElementById('chatToggleBtn')?.addEventListener('click', () =>
-    document.getElementById('aiChatModal')?.classList.add('active'));
-
-  document.getElementById('closeChatBtn')?.addEventListener('click', () =>
-    document.getElementById('aiChatModal')?.classList.remove('active'));
-
+  document.getElementById('chatToggleBtn')?.addEventListener('click', () => document.getElementById('aiChatModal')?.classList.add('active'));
+  document.getElementById('closeChatBtn')?.addEventListener('click', () => document.getElementById('aiChatModal')?.classList.remove('active'));
   document.getElementById('sendChatBtn')?.addEventListener('click', sendChatMessage);
-
-  document.getElementById('chatInput')?.addEventListener('keypress', e => {
-    if (e.key === 'Enter') sendChatMessage();
-  });
+  document.getElementById('chatInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') sendChatMessage(); });
 }
+
+// AI chat function
+async function sendChatMessage() {
+  const input = document.getElementById('chatInput');
+  if (!input) return;
+  const message = input.value.trim();
+  if (!message) return;
+  addChatMessage(message, 'user');
+  input.value = '';
+  addChatMessage('<i>AI is thinking...</i>', 'ai');
+  try {
+    const response = await fetch('/.netlify/functions/ask-ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'chat', payload: message }),
+    });
+    if (!response.ok) throw new Error('AI response failed');
+    const data = await response.json();
+    document.querySelector('.ai-message:last-child')?.remove();
+    addChatMessage(data.message.replace(/\n/g, '<br>').replace(/\*\*/g, '<strong>'), 'ai');
+  } catch (e) {
+    document.querySelector('.ai-message:last-child')?.remove();
+    addChatMessage('Sorry, I\'m having trouble connecting right now.', 'ai');
+    console.error(e);
+  }
+}
+
+function addChatMessage(msg, sender) {
+  const container = document.getElementById('chatMessages');
+  if (!container) return;
+  const div = document.createElement('div');
+  div.className = `${sender}-message`;
+  div.innerHTML = `<p>${msg}</p>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+// Initial setup on page load
+document.addEventListener('DOMContentLoaded', () => {
+  loadCurrentUser();
+  loadWorkoutProgress();
+  renderHome();
+  setupEventListeners();
+});

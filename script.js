@@ -2,7 +2,7 @@
 
 /**
  * ===================================================================
- * FitTrack Pro - Main Application Script v2.0 (Stable)
+ * FitTrack Pro - Main Application Script v3.0 (Stable & Refined UI)
  * ===================================================================
  */
 
@@ -17,12 +17,12 @@ const GOOGLE_CONFIG = {
 };
 
 const workoutData = {
-  1: { name: 'Push Day 1', bodyPart: 'Push', exercises: [ { name: 'BB Flat Bench Press', sets: 4, reps: '10, 8, 6, 4', alternatives: ['Machine bench press', 'incline bench press', 'db flat bench press'] }, { name: 'DB Incline Press', sets: 3, reps: '12, 8, 6', alternatives: ['Incline bench press', 'machine incline bench press', 'flat db bench press'] }, { name: 'DB Shoulder Press', sets: 4, reps: '15, 12, 10, 6', alternatives: ['Machine shoulder press', 'barbell shoulder press', 'shoulder front raises'] }, { name: 'Cable Straight Pushdown', sets: 3, reps: '15, 12, 10 + drop', alternatives: ['Rope pushdowns', 'single hand cable pushdowns', 'skull crushers'] }, { name: 'DB Lateral Raises', sets: 4, reps: '12, 10, 8, complex', alternatives: ['Upright rows', 'laying lateral raises'] }, { name: 'Overhead Tricep Extension', sets: 3, reps: '15, 12, 10', alternatives: ['Rope pushdowns', 'skull crushers'] }, { name: 'Cable Chest Fly', sets: 3, reps: '20, 16, 12', alternatives: ['Machine fly', 'db fly'] }, ] },
-  2: { name: 'Pull Day 1', bodyPart: 'Pull', exercises: [ { name: 'Lat Pulldown', sets: 4, reps: '12, 10, 6, 6 peak', alternatives: ['DB row', 'barbell row', 'pull ups'] }, { name: 'Deadlift', sets: 4, reps: '10, 8, 6, 4', alternatives: ['Back extension', 'db deadlift'] }, { name: 'Seated Close Grip Row', sets: 4, reps: '12, 10, 10, 10 peak', alternatives: ['Row with narrow bar', 'row with wide bar', 'db and bb row'] }, { name: 'Rope Pull Overs', sets: 3, reps: '16, 12, 10', alternatives: ['Pull over with db'] }, { name: 'DB Hammer Curls', sets: 3, reps: '15, 12, 10', alternatives: ['DB curls', 'preacher curls'] }, { name: 'Preacher Curls', sets: 4, reps: '16, 12, 10, 8', alternatives: ['DB curls', 'seated curls'] }, { name: 'Barbell Curls', sets: 2, reps: '20, 15', alternatives: ['Supinated curls', 'cable curls'] }, ] },
-  3: { name: 'Leg Day', bodyPart: 'Legs', exercises: [ { name: 'BB Squat', sets: 4, reps: '15, 10, 6, 4', alternatives: ['Hack squats', 'leg press'] }, { name: 'Lunges', sets: 3, reps: '8 strides/leg', alternatives: ['Reverse squat', 'romanian deadlift'] }, { name: 'Sumo Stance Leg Press', sets: 3, reps: '12, 10, 8', alternatives: ['Glute bridges', 'goblet squat', 'sumo squat'] }, { name: 'Hamstring Curls', sets: 3, reps: '15, 12, 10', alternatives: ['Reverse hamstring curls'] }, { name: 'Legs Extension', sets: 3, reps: '15, 12, 10', alternatives: ['Adductors', 'hack squat full depth'] }, { name: 'Calf Raises', sets: 4, reps: '25, 20, 20, 15', alternatives: ['Seated calf raises'] }, ] },
-  4: { name: 'Push Day 2', bodyPart: 'Push', exercises: [ { name: 'BB Incline Bench', sets: 2, reps: '12, 10', alternatives: ['Machine bench press', 'db flat bench press'] }, { name: 'Cambered Bar Front Raise', sets: 3, reps: '15, 12, 10', alternatives: ['DB front raise', 'plate front raise'] }, { name: 'Cable Rope Face Pulls w/ Rear Delt Fly', sets: 3, reps: '12, 10, 8 each', alternatives: ['Bent over delt fly'] }, { name: 'Lowest Angle Chest Fly', sets: 3, reps: '15, 12, 10', alternatives: ['Machine fly', 'db fly'] }, { name: 'Front Plate Raise', sets: 2, reps: '20, 16', alternatives: ['DB front raise'] }, { name: 'Close Grip Bench Press', sets: 2, reps: '15, 12', alternatives: ['Tricep dips'] }, { name: 'Lateral Raises on Machine/Cable', sets: 2, reps: '20, 16', alternatives: ['Upright rows', 'db lateral raises'] }, ] },
-  5: { name: 'Pull Day 2', bodyPart: 'Pull', exercises: [ { name: 'Close Grip Lat Pulldown w/ V Bar', sets: 3, reps: '15, 12, 10', alternatives: ['DB row', 'barbell row', 'pull ups'] }, { name: 'BB Row', sets: 3, reps: '12, 10, 8', alternatives: ['Single hand db row', 'machine row'] }, { name: 'Reverse Hand Rowing', sets: 2, reps: '12, 10', alternatives: ['Single hand db row', 'machine row'] }, { name: 'Hyper Extension', sets: 3, reps: '20, 16, 14', alternatives: ['Deadlift', 't-bar row'] }, { name: 'Incline Curls', sets: 3, reps: '15, 12, 10', alternatives: ['Hammer curls', 'db curls'] }, { name: 'Machine Rope Curls', sets: 3, reps: '15, 12, 10', alternatives: ['Hammer curls', 'db curls'] }, ] },
-  6: { name: 'Arms Day', bodyPart: 'Arms', exercises: [ { name: 'Superset: Cable EZ Bar Curls / Tricep Pushdowns', sets: 4, reps: '15-15...', alternatives: [] }, { name: 'Superset: Preacher Curls / Overhead Tricep Extension', sets: 3, reps: '12-12...', alternatives: [] }, { name: 'Superset: Wide Grip Bar Curls / Rope Pushdowns', sets: 2, reps: '5p 10f - 10...', alternatives: [] }, { name: 'Superset: Hammer Curls Drop Set / Single Arm Tricep', sets: 2, reps: '(15, 12, 10)...', alternatives: [] }, ] },
+    1: { name: 'Push Day 1', bodyPart: 'Push', exercises: [ { name: 'BB Flat Bench Press', sets: 4, reps: '10, 8, 6, 4', alternatives: ['Machine bench press', 'incline bench press', 'db flat bench press'] }, { name: 'DB Incline Press', sets: 3, reps: '12, 8, 6', alternatives: ['Incline bench press', 'machine incline bench press', 'flat db bench press'] }, { name: 'DB Shoulder Press', sets: 4, reps: '15, 12, 10, 6', alternatives: ['Machine shoulder press', 'barbell shoulder press', 'shoulder front raises'] }, { name: 'Cable Straight Pushdown', sets: 3, reps: '15, 12, 10 + drop', alternatives: ['Rope pushdowns', 'single hand cable pushdowns', 'skull crushers'] }, { name: 'DB Lateral Raises', sets: 4, reps: '12, 10, 8, complex', alternatives: ['Upright rows', 'laying lateral raises'] }, { name: 'Overhead Tricep Extension', sets: 3, reps: '15, 12, 10', alternatives: ['Rope pushdowns', 'skull crushers'] }, { name: 'Cable Chest Fly', sets: 3, reps: '20, 16, 12', alternatives: ['Machine fly', 'db fly'] }, ] },
+    2: { name: 'Pull Day 1', bodyPart: 'Pull', exercises: [ { name: 'Lat Pulldown', sets: 4, reps: '12, 10, 6, 6 peak', alternatives: ['DB row', 'barbell row', 'pull ups'] }, { name: 'Deadlift', sets: 4, reps: '10, 8, 6, 4', alternatives: ['Back extension', 'db deadlift'] }, { name: 'Seated Close Grip Row', sets: 4, reps: '12, 10, 10, 10 peak', alternatives: ['Row with narrow bar', 'row with wide bar', 'db and bb row'] }, { name: 'Rope Pull Overs', sets: 3, reps: '16, 12, 10', alternatives: ['Pull over with db'] }, { name: 'DB Hammer Curls', sets: 3, reps: '15, 12, 10', alternatives: ['DB curls', 'preacher curls'] }, { name: 'Preacher Curls', sets: 4, reps: '16, 12, 10, 8', alternatives: ['DB curls', 'seated curls'] }, { name: 'Barbell Curls', sets: 2, reps: '20, 15', alternatives: ['Supinated curls', 'cable curls'] }, ] },
+    3: { name: 'Leg Day', bodyPart: 'Legs', exercises: [ { name: 'BB Squat', sets: 4, reps: '15, 10, 6, 4', alternatives: ['Hack squats', 'leg press'] }, { name: 'Lunges', sets: 3, reps: '8 strides/leg', alternatives: ['Reverse squat', 'romanian deadlift'] }, { name: 'Sumo Stance Leg Press', sets: 3, reps: '12, 10, 8', alternatives: ['Glute bridges', 'goblet squat', 'sumo squat'] }, { name: 'Hamstring Curls', sets: 3, reps: '15, 12, 10', alternatives: ['Reverse hamstring curls'] }, { name: 'Legs Extension', sets: 3, reps: '15, 12, 10', alternatives: ['Adductors', 'hack squat full depth'] }, { name: 'Calf Raises', sets: 4, reps: '25, 20, 20, 15', alternatives: ['Seated calf raises'] }, ] },
+    4: { name: 'Push Day 2', bodyPart: 'Push', exercises: [ { name: 'BB Incline Bench', sets: 2, reps: '12, 10', alternatives: ['Machine bench press', 'db flat bench press'] }, { name: 'Cambered Bar Front Raise', sets: 3, reps: '15, 12, 10', alternatives: ['DB front raise', 'plate front raise'] }, { name: 'Cable Rope Face Pulls w/ Rear Delt Fly', sets: 3, reps: '12, 10, 8 each', alternatives: ['Bent over delt fly'] }, { name: 'Lowest Angle Chest Fly', sets: 3, reps: '15, 12, 10', alternatives: ['Machine fly', 'db fly'] }, { name: 'Front Plate Raise', sets: 2, reps: '20, 16', alternatives: ['DB front raise'] }, { name: 'Close Grip Bench Press', sets: 2, reps: '15, 12', alternatives: ['Tricep dips'] }, { name: 'Lateral Raises on Machine/Cable', sets: 2, reps: '20, 16', alternatives: ['Upright rows', 'db lateral raises'] }, ] },
+    5: { name: 'Pull Day 2', bodyPart: 'Pull', exercises: [ { name: 'Close Grip Lat Pulldown w/ V Bar', sets: 3, reps: '15, 12, 10', alternatives: ['DB row', 'barbell row', 'pull ups'] }, { name: 'BB Row', sets: 3, reps: '12, 10, 8', alternatives: ['Single hand db row', 'machine row'] }, { name: 'Reverse Hand Rowing', sets: 2, reps: '12, 10', alternatives: ['Single hand db row', 'machine row'] }, { name: 'Hyper Extension', sets: 3, reps: '20, 16, 14', alternatives: ['Deadlift', 't-bar row'] }, { name: 'Incline Curls', sets: 3, reps: '15, 12, 10', alternatives: ['Hammer curls', 'db curls'] }, { name: 'Machine Rope Curls', sets: 3, reps: '15, 12, 10', alternatives: ['Hammer curls', 'db curls'] }, ] },
+    6: { name: 'Arms Day', bodyPart: 'Arms', exercises: [ { name: 'Superset: Cable EZ Bar Curls / Tricep Pushdowns', sets: 4, reps: '15-15...', alternatives: [] }, { name: 'Superset: Preacher Curls / Overhead Tricep Extension', sets: 3, reps: '12-12...', alternatives: [] }, { name: 'Superset: Wide Grip Bar Curls / Rope Pushdowns', sets: 2, reps: '5p 10f - 10...', alternatives: [] }, { name: 'Superset: Hammer Curls Drop Set / Single Arm Tricep', sets: 2, reps: '(15, 12, 10)...', alternatives: [] }, ] },
 };
 
 // 2. APPLICATION STATE
@@ -163,8 +163,10 @@ function checkPendingWorkoutData() {
   for (const day of Object.values(workoutProgress)) {
     if (day?.sets) {
       for (const ex of Object.values(day.sets)) {
-        if (ex) for (const set of Object.values(ex)) {
-          if (typeof set === 'object' && set.completed) return true;
+        if (ex) {
+            for(const set of Object.values(ex)) {
+                if(typeof set === 'object' && (set.weight || set.reps)) return true;
+            }
         }
       }
     }
@@ -172,7 +174,7 @@ function checkPendingWorkoutData() {
   return false;
 }
 
-// 5. UI RENDERING & WORKOUT LOGIC
+// 5. UI RENDERING & WORKOUT LOGIC (NEW COMPACT UI)
 function renderHome() {
   const grid = document.getElementById('workoutGrid');
   if (!grid) return;
@@ -195,7 +197,7 @@ function loadWorkoutUI() {
   const workout = workoutData[currentDay];
   if (!workout) return;
   document.getElementById('currentWorkoutTitle').textContent = workout.name;
-
+  
   const container = document.getElementById('exerciseListContainer');
   if (!container) return;
   container.innerHTML = '';
@@ -203,56 +205,97 @@ function loadWorkoutUI() {
   const progress = workoutProgress[currentDay] || { date: new Date().toISOString().slice(0, 10), sets: {}, notes: '' };
 
   workout.exercises.forEach((exercise, exIndex) => {
-    for (let setIndex = 0; setIndex < exercise.sets; setIndex++) {
-      const p = progress.sets?.[exIndex]?.[setIndex] || {};
-      const row = document.createElement('div');
-      row.className = 'compact-set-row';
-      row.dataset.ex = exIndex;
-      row.dataset.set = setIndex;
-
-      let optionsHtml = `<option value="${exercise.name}">${exercise.name}</option>`;
-      exercise.alternatives?.forEach(a => { optionsHtml += `<option value="${a}">${a}</option>`; });
-      const selectedEx = progress.sets?.[exIndex]?.selectedExercise || exercise.name;
-
-      row.innerHTML = `
-        <select class="exercise-select-compact" name="exercise">${optionsHtml.replace(`value="${selectedEx}"`, `value="${selectedEx}" selected`)}</select>
-        <span class="set-label">Set ${setIndex + 1}</span>
-        <input type="number" class="set-input" name="weight" placeholder="kg" value="${p.weight || ''}">
-        <input type="number" class="set-input" name="reps" placeholder="Reps" value="${p.reps || ''}">
-        <div class="set-checkbox">
-          <input type="checkbox" name="completed" ${p.completed ? 'checked' : ''}>
-        </div>
-      `;
-      container.appendChild(row);
+    const item = document.createElement('div');
+    item.className = 'exercise-log-item';
+    item.dataset.exIndex = exIndex;
+    
+    // Header for exercise and set selection
+    const header = document.createElement('div');
+    header.className = 'exercise-log-header';
+    
+    // Exercise Dropdown
+    const exerciseSelect = document.createElement('select');
+    exerciseSelect.className = 'exercise-select';
+    let optionsHtml = `<option value="${exercise.name}">${exercise.name}</option>`;
+    exercise.alternatives?.forEach(a => { optionsHtml += `<option value="${a}">${a}</option>`; });
+    exerciseSelect.innerHTML = optionsHtml;
+    exerciseSelect.value = progress.sets?.[exIndex]?.selectedExercise || exercise.name;
+    
+    // Set Dropdown
+    const setSelect = document.createElement('select');
+    setSelect.className = 'set-select';
+    for (let i = 1; i <= exercise.sets; i++) {
+      setSelect.innerHTML += `<option value="${i-1}">Set ${i}</option>`;
     }
+    
+    header.appendChild(exerciseSelect);
+    header.appendChild(setSelect);
+    item.appendChild(header);
+    
+    // Container for weight/reps inputs
+    const inputsContainer = document.createElement('div');
+    inputsContainer.className = 'set-inputs';
+    item.appendChild(inputsContainer);
+
+    // Function to render inputs for the selected set
+    const renderSetInputs = (setIndex) => {
+      const p = progress.sets?.[exIndex]?.[setIndex] || {};
+      inputsContainer.innerHTML = `
+        <input type="number" name="weight" placeholder="Weight (kg)" value="${p.weight || ''}">
+        <input type="number" name="reps" placeholder="Reps" value="${p.reps || ''}">
+      `;
+      inputsContainer.querySelectorAll('input').forEach(input => {
+        input.addEventListener('change', () => handleSetChange(exIndex, setIndex));
+      });
+    };
+    
+    // Event listener for set selection
+    setSelect.addEventListener('change', () => {
+      renderSetInputs(setSelect.value);
+    });
+    
+    // Event listener for exercise selection
+    exerciseSelect.addEventListener('change', () => {
+        handleExerciseChange(exIndex, exerciseSelect.value);
+    });
+
+    // Initial render for the first set
+    renderSetInputs(0);
+    
+    container.appendChild(item);
   });
 
   document.getElementById('workoutNotes').value = progress.notes || '';
-
-  // Attach event handlers
-  container.querySelectorAll('input, select').forEach(el => el.addEventListener('change', handleSetChange));
+  document.getElementById('workoutNotes').addEventListener('change', saveNotes);
 }
 
-function handleSetChange(e) {
-  const row = e.target.closest('.compact-set-row');
-  if (!row) return;
+function handleExerciseChange(exIndex, newExerciseName) {
+    if (!workoutProgress[currentDay]) workoutProgress[currentDay] = { date: new Date().toISOString().slice(0, 10), sets: {}, notes: '' };
+    if (!workoutProgress[currentDay].sets[exIndex]) workoutProgress[currentDay].sets[exIndex] = {};
+    workoutProgress[currentDay].sets[exIndex].selectedExercise = newExerciseName;
+    saveWorkoutProgress();
+}
 
-  const exIndex = row.dataset.ex;
-  const setIndex = row.dataset.set;
+function handleSetChange(exIndex, setIndex) {
+  const item = document.querySelector(`.exercise-log-item[data-ex-index="${exIndex}"]`);
+  if (!item) return;
 
   if (!workoutProgress[currentDay]) workoutProgress[currentDay] = { date: new Date().toISOString().slice(0, 10), sets: {}, notes: '' };
   if (!workoutProgress[currentDay].sets[exIndex]) workoutProgress[currentDay].sets[exIndex] = {};
   if (!workoutProgress[currentDay].sets[exIndex][setIndex]) workoutProgress[currentDay].sets[exIndex][setIndex] = {};
+
+  const weightInput = item.querySelector('input[name="weight"]');
+  const repsInput = item.querySelector('input[name="reps"]');
+
+  workoutProgress[currentDay].sets[exIndex][setIndex] = {
+    weight: weightInput.value,
+    reps: repsInput.value,
+  };
   
-  const exerciseSelect = row.querySelector('.exercise-select-compact');
+  // Also save the selected exercise name at the exercise level
+  const exerciseSelect = item.querySelector('.exercise-select');
   workoutProgress[currentDay].sets[exIndex].selectedExercise = exerciseSelect.value;
   
-  const inputs = row.querySelectorAll('input');
-  inputs.forEach(input => {
-    const value = input.type === 'checkbox' ? input.checked : input.value;
-    workoutProgress[currentDay].sets[exIndex][setIndex][input.name] = value;
-  });
-
   saveWorkoutProgress();
 }
 
@@ -286,7 +329,7 @@ function prepareDataForSheets() {
       for (const setIndex in progress.sets[exIndex]) {
         if (setIndex === 'selectedExercise') continue;
         const set = progress.sets[exIndex][setIndex];
-        if (set?.completed && (set.weight || set.reps)) {
+        if (set && (set.weight || set.reps)) {
           rows.push([progress.date, workout.name, exName, parseInt(setIndex) + 1, set.weight || 0, set.reps || 0, currentUser, noteAdded ? '' : progress.notes || '']);
           noteAdded = true;
         }
@@ -306,7 +349,7 @@ async function syncWorkoutData() {
     const response = await gapi.client.sheets.spreadsheets.values.append({
       spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID, range: 'WorkoutLog!A1', valueInputOption: 'USER_ENTERED', insertDataOption: 'INSERT_ROWS', resource: { values: rows },
     });
-    if (response.status !== 200) throw new Error("Google Sheets API error");
+    if (response.status !== 200) throw new Error(`Google Sheets API error: ${response.result.error.message}`);
     showNotification("Workouts synced successfully!", "success");
     const syncedDays = [...new Set(rows.map(row => Object.keys(workoutData).find(day => workoutData[day].name === row[1])))];
     syncedDays.forEach(day => { if (day && workoutProgress[day]) delete workoutProgress[day]; });
@@ -455,7 +498,11 @@ async function analyzeProgressWithAI() {
     const response = await fetch('/.netlify/functions/ask-ai', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'analyze', payload: summary }),
     });
-    if (!response.ok) throw new Error('AI analysis failed');
+    
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`AI analysis failed: ${response.status} ${response.statusText}. Details: ${errorText}`);
+    }
     const data = await response.json();
     
     document.getElementById('aiChatModal')?.classList.add('active');
@@ -463,7 +510,7 @@ async function analyzeProgressWithAI() {
     addChatMessage(data.message.replace(/\n/g, '<br>'), 'ai');
 
   } catch (error) {
-    showNotification('Failed to get AI analysis.', 'error');
+    showNotification('Failed to get AI analysis. Check console.', 'error');
     console.error('AI Analyze Error:', error);
   } finally {
     if (btn) btn.disabled = false;

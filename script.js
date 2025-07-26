@@ -1,78 +1,124 @@
 'use strict';
 
-// Wrap the entire script in a DOMContentLoaded listener to ensure the HTML is ready.
+// =================================================================================
+// FitTrack Pro - Final, Stable Script
+// This script contains all logic for the PPL workout tracker.
+// All functions are defined in the global scope to ensure proper initialization.
+// =================================================================================
+
+// === 1. CONFIGURATION & STATE ===
+const GOOGLE_CONFIG = {
+    CLIENT_ID: '1040913543341-0vj52ims83dkcudpvh6rdtvrvr5da5nn.apps.googleusercontent.com',
+    SPREADSHEET_ID: '15O-z40Jsy2PFs0XaXle07g_hJuwBCgpEi399TC9Yaic',
+    SCOPES: 'https://www.googleapis.com/auth/spreadsheets',
+};
+
+const workoutData = {
+    1: { name: "Push Day 1", bodyPart: "Push", exercises: [
+        { name: "BB Flat Bench Press", sets: 4, reps: "10, 8, 6, 4", alternatives: ["Machine bench press", "incline bench press", "db flat bench press"] },
+        { name: "DB Incline Press", sets: 3, reps: "12, 8, 6", alternatives: ["Incline bench press", "machine incline bench press", "flat db bench press"] },
+        { name: "DB Shoulder Press", sets: 4, reps: "15, 12, 10, 6", alternatives: ["Machine shoulder press", "barbell shoulder press", "shoulder front raises"] },
+        { name: "Cable Straight Pushdown", sets: 3, reps: "15, 12, 10 + drop", alternatives: ["Rope pushdowns", "single hand cable pushdowns", "skull crushers"] },
+        { name: "DB Lateral Raises", sets: 4, reps: "12, 10, 8, complex", alternatives: ["Upright rows", "laying lateral raises"] },
+        { name: "Overhead Tricep Extension", sets: 3, reps: "15, 12, 10", alternatives: ["Rope pushdowns", "skull crushers"] },
+        { name: "Cable Chest Fly", sets: 3, reps: "20, 16, 12", alternatives: ["Machine fly", "db fly"] }
+    ]},
+    2: { name: "Pull Day 1", bodyPart: "Pull", exercises: [
+        { name: "Lat Pulldown", sets: 4, reps: "12, 10, 6, 6 peak", alternatives: ["DB row", "barbell row", "pull ups"] },
+        { name: "Deadlift", sets: 4, reps: "10, 8, 6, 4", alternatives: ["Back extension", "db deadlift"] },
+        { name: "Seated Close Grip Row", sets: 4, reps: "12, 10, 10, 10 peak", alternatives: ["Row with narrow bar", "row with wide bar", "db and bb row"] },
+        { name: "Rope Pull Overs", sets: 3, reps: "16, 12, 10", alternatives: ["Pull over with db"] },
+        { name: "DB Hammer Curls", sets: 3, reps: "15, 12, 10", alternatives: ["DB curls", "preacher curls"] },
+        { name: "Preacher Curls", sets: 4, reps: "16, 12, 10, 8", alternatives: ["DB curls", "seated curls"] },
+        { name: "Barbell Curls", sets: 2, reps: "20, 15", alternatives: ["Supinated curls", "cable curls"] }
+    ]},
+    3: { name: "Leg Day", bodyPart: "Legs", exercises: [
+        { name: "BB Squat", sets: 4, reps: "15, 10, 6, 4", alternatives: ["Hack squats", "leg press"] },
+        { name: "Lunges", sets: 3, reps: "8 strides/leg", alternatives: ["Reverse squat", "romanian deadlift"] },
+        { name: "Sumo Stance Leg Press", sets: 3, reps: "12, 10, 8", alternatives: ["Glute bridges", "goblet squat", "sumo squat"] },
+        { name: "Hamstring Curls", sets: 3, reps: "15, 12, 10", alternatives: ["Reverse hamstring curls"] },
+        { name: "Legs Extension", sets: 3, reps: "15, 12, 10", alternatives: ["Adductors", "hack squat full depth"] },
+        { name: "Calf Raises", sets: 4, reps: "25, 20, 20, 15", alternatives: ["Seated calf raises"] }
+    ]},
+    4: { name: "Push Day 2", bodyPart: "Push", exercises: [
+        { name: "BB Incline Bench", sets: 2, reps: "12, 10", alternatives: ["Machine bench press", "db flat bench press"] },
+        { name: "Cambered Bar Front Raise", sets: 3, reps: "15, 12, 10", alternatives: ["DB front raise", "plate front raise"] },
+        { name: "Cable Rope Face Pulls w/ Rear Delt Fly", sets: 3, reps: "12, 10, 8 each", alternatives: ["Bent over delt fly"] },
+        { name: "Lowest Angle Chest Fly", sets: 3, reps: "15, 12, 10", alternatives: ["Machine fly", "db fly"] },
+        { name: "Front Plate Raise", sets: 2, reps: "20, 16", alternatives: ["DB front raise"] },
+        { name: "Close Grip Bench Press", sets: 2, reps: "15, 12", alternatives: ["Tricep dips"] },
+        { name: "Lateral Raises on Machine/Cable", sets: 2, reps: "20, 16", alternatives: ["Upright rows", "db lateral raises"] }
+    ]},
+    5: { name: "Pull Day 2", bodyPart: "Pull", exercises: [
+        { name: "Close Grip Lat Pulldown w/ V Bar", sets: 3, reps: "15, 12, 10", alternatives: ["DB row", "barbell row", "pull ups"] },
+        { name: "BB Row", sets: 3, reps: "12, 10, 8", alternatives: ["Single hand db row", "machine row"] },
+        { name: "Reverse Hand Rowing", sets: 2, reps: "12, 10", alternatives: ["Single hand db row", "machine row"] },
+        { name: "Hyper Extension", sets: 3, reps: "20, 16, 14", alternatives: ["Deadlift", "t-bar row"] },
+        { name: "Incline Curls", sets: 3, reps: "15, 12, 10", alternatives: ["Hammer curls", "db curls"] },
+        { name: "Machine Rope Curls", sets: 3, reps: "15, 12, 10", alternatives: ["Hammer curls", "db curls"] }
+    ]},
+    6: { name: "Arms Day", bodyPart: "Arms", exercises: [
+        { name: "Superset: Cable EZ Bar Curls / Tricep Pushdowns", sets: 4, reps: "15-15...", alternatives: [] },
+        { name: "Superset: Preacher Curls / Overhead Tricep Extension", sets: 3, reps: "12-12...", alternatives: [] },
+        { name: "Superset: Wide Grip Bar Curls / Rope Pushdowns", sets: 2, reps: "5p 10f - 10...", alternatives: [] },
+        { name: "Superset: Hammer Curls Drop Set / Single Arm Tricep", sets: 2, reps: "(15, 12, 10)...", alternatives: [] }
+    ]}
+};
+
+let currentUser = 'Harjas';
+let currentDay = 1;
+let workoutProgress = {};
+let gapiInited = false;
+let gisInited = false;
+let tokenClient;
+let sheetData = [];
+let chartInstances = {};
+let isApiReady = false;
+
+// === 2. GOOGLE API INITIALIZATION (GLOBAL SCOPE) ===
+// These functions MUST be in the global scope for the onload callbacks to work.
+window.gapiLoaded = () => {
+    gapi.load('client', initializeGapiClient);
+};
+
+window.gisLoaded = () => {
+    try {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CONFIG.CLIENT_ID,
+            scope: GOOGLE_CONFIG.SCOPES,
+            callback: handleAuthResponse,
+        });
+        gisInited = true;
+        checkApiReady();
+    } catch (e) {
+        showNotification("Critical Error: Could not initialize Google Sign-In.", "error");
+    }
+};
+
+async function initializeGapiClient() {
+    try {
+        await gapi.client.init({
+            discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
+        });
+        gapiInited = true;
+        checkApiReady();
+    } catch (e) {
+        showNotification("Critical Error: Could not initialize Google Sheets API.", "error");
+    }
+}
+
+function checkApiReady() {
+    if (gapiInited && gisInited) {
+        isApiReady = true;
+        updateAuthorizeButtons(true, "Authorize");
+        const token = gapi.client.getToken();
+        updateSigninStatus(token !== null);
+    }
+}
+
+// === 3. MAIN APP LOGIC (RUNS AFTER DOM IS READY) ===
 document.addEventListener('DOMContentLoaded', () => {
 
-    // === 1. CONFIGURATION & STATE ===
-    const GOOGLE_CONFIG = {
-        CLIENT_ID: '1040913543341-0vj52ims83dkcudpvh6rdtvrvr5da5nn.apps.googleusercontent.com',
-        SPREADSHEET_ID: '15O-z40Jsy2PFs0XaXle07g_hJuwBCgpEi399TC9Yaic',
-        SCOPES: 'https://www.googleapis.com/auth/spreadsheets',
-    };
-
-    const workoutData = {
-        1: { name: "Push Day 1", bodyPart: "Push", exercises: [
-            { name: "BB Flat Bench Press", sets: 4, reps: "10, 8, 6, 4", alternatives: ["Machine bench press", "incline bench press", "db flat bench press"] },
-            { name: "DB Incline Press", sets: 3, reps: "12, 8, 6", alternatives: ["Incline bench press", "machine incline bench press", "flat db bench press"] },
-            { name: "DB Shoulder Press", sets: 4, reps: "15, 12, 10, 6", alternatives: ["Machine shoulder press", "barbell shoulder press", "shoulder front raises"] },
-            { name: "Cable Straight Pushdown", sets: 3, reps: "15, 12, 10 + drop", alternatives: ["Rope pushdowns", "single hand cable pushdowns", "skull crushers"] },
-            { name: "DB Lateral Raises", sets: 4, reps: "12, 10, 8, complex", alternatives: ["Upright rows", "laying lateral raises"] },
-            { name: "Overhead Tricep Extension", sets: 3, reps: "15, 12, 10", alternatives: ["Rope pushdowns", "skull crushers"] },
-            { name: "Cable Chest Fly", sets: 3, reps: "20, 16, 12", alternatives: ["Machine fly", "db fly"] }
-        ]},
-        2: { name: "Pull Day 1", bodyPart: "Pull", exercises: [
-            { name: "Lat Pulldown", sets: 4, reps: "12, 10, 6, 6 peak", alternatives: ["DB row", "barbell row", "pull ups"] },
-            { name: "Deadlift", sets: 4, reps: "10, 8, 6, 4", alternatives: ["Back extension", "db deadlift"] },
-            { name: "Seated Close Grip Row", sets: 4, reps: "12, 10, 10, 10 peak", alternatives: ["Row with narrow bar", "row with wide bar", "db and bb row"] },
-            { name: "Rope Pull Overs", sets: 3, reps: "16, 12, 10", alternatives: ["Pull over with db"] },
-            { name: "DB Hammer Curls", sets: 3, reps: "15, 12, 10", alternatives: ["DB curls", "preacher curls"] },
-            { name: "Preacher Curls", sets: 4, reps: "16, 12, 10, 8", alternatives: ["DB curls", "seated curls"] },
-            { name: "Barbell Curls", sets: 2, reps: "20, 15", alternatives: ["Supinated curls", "cable curls"] }
-        ]},
-        3: { name: "Leg Day", bodyPart: "Legs", exercises: [
-            { name: "BB Squat", sets: 4, reps: "15, 10, 6, 4", alternatives: ["Hack squats", "leg press"] },
-            { name: "Lunges", sets: 3, reps: "8 strides/leg", alternatives: ["Reverse squat", "romanian deadlift"] },
-            { name: "Sumo Stance Leg Press", sets: 3, reps: "12, 10, 8", alternatives: ["Glute bridges", "goblet squat", "sumo squat"] },
-            { name: "Hamstring Curls", sets: 3, reps: "15, 12, 10", alternatives: ["Reverse hamstring curls"] },
-            { name: "Legs Extension", sets: 3, reps: "15, 12, 10", alternatives: ["Adductors", "hack squat full depth"] },
-            { name: "Calf Raises", sets: 4, reps: "25, 20, 20, 15", alternatives: ["Seated calf raises"] }
-        ]},
-        4: { name: "Push Day 2", bodyPart: "Push", exercises: [
-            { name: "BB Incline Bench", sets: 2, reps: "12, 10", alternatives: ["Machine bench press", "db flat bench press"] },
-            { name: "Cambered Bar Front Raise", sets: 3, reps: "15, 12, 10", alternatives: ["DB front raise", "plate front raise"] },
-            { name: "Cable Rope Face Pulls w/ Rear Delt Fly", sets: 3, reps: "12, 10, 8 each", alternatives: ["Bent over delt fly"] },
-            { name: "Lowest Angle Chest Fly", sets: 3, reps: "15, 12, 10", alternatives: ["Machine fly", "db fly"] },
-            { name: "Front Plate Raise", sets: 2, reps: "20, 16", alternatives: ["DB front raise"] },
-            { name: "Close Grip Bench Press", sets: 2, reps: "15, 12", alternatives: ["Tricep dips"] },
-            { name: "Lateral Raises on Machine/Cable", sets: 2, reps: "20, 16", alternatives: ["Upright rows", "db lateral raises"] }
-        ]},
-        5: { name: "Pull Day 2", bodyPart: "Pull", exercises: [
-            { name: "Close Grip Lat Pulldown w/ V Bar", sets: 3, reps: "15, 12, 10", alternatives: ["DB row", "barbell row", "pull ups"] },
-            { name: "BB Row", sets: 3, reps: "12, 10, 8", alternatives: ["Single hand db row", "machine row"] },
-            { name: "Reverse Hand Rowing", sets: 2, reps: "12, 10", alternatives: ["Single hand db row", "machine row"] },
-            { name: "Hyper Extension", sets: 3, reps: "20, 16, 14", alternatives: ["Deadlift", "t-bar row"] },
-            { name: "Incline Curls", sets: 3, reps: "15, 12, 10", alternatives: ["Hammer curls", "db curls"] },
-            { name: "Machine Rope Curls", sets: 3, reps: "15, 12, 10", alternatives: ["Hammer curls", "db curls"] }
-        ]},
-        6: { name: "Arms Day", bodyPart: "Arms", exercises: [
-            { name: "Superset: Cable EZ Bar Curls / Tricep Pushdowns", sets: 4, reps: "15-15...", alternatives: [] },
-            { name: "Superset: Preacher Curls / Overhead Tricep Extension", sets: 3, reps: "12-12...", alternatives: [] },
-            { name: "Superset: Wide Grip Bar Curls / Rope Pushdowns", sets: 2, reps: "5p 10f - 10...", alternatives: [] },
-            { name: "Superset: Hammer Curls Drop Set / Single Arm Tricep", sets: 2, reps: "(15, 12, 10)...", alternatives: [] }
-        ]}
-    };
-
-    let currentUser = 'Harjas';
-    let currentDay = 1;
-    let workoutProgress = {};
-    let gapiInited = false;
-    let gisInited = false;
-    let tokenClient;
-    let sheetData = [];
-    let chartInstances = {};
-    let isApiReady = false;
-    
-    // === 2. DOM ELEMENT REFERENCES ===
     const elements = {
         navLinks: document.querySelectorAll('.nav-link'),
         userCards: document.querySelectorAll('.user-card'),
@@ -89,32 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
         chatMessages: document.getElementById('chatMessages')
     };
 
-    // === 3. GOOGLE API INITIALIZATION ===
-    window.gapiLoaded = () => gapi.load('client', initializeGapiClient);
-    window.gisLoaded = () => {
-        try {
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: GOOGLE_CONFIG.CLIENT_ID, scope: GOOGLE_CONFIG.SCOPES, callback: handleAuthResponse,
-            });
-            gisInited = true; checkApiReady();
-        } catch (e) { showNotification("Critical Error: Could not initialize Google Sign-In.", "error"); }
-    };
-    async function initializeGapiClient() {
-        try {
-            await gapi.client.init({ discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"] });
-            gapiInited = true; checkApiReady();
-        } catch (e) { showNotification("Critical Error: Could not initialize Google Sheets API.", "error"); }
-    }
-    function checkApiReady() {
-        if (gapiInited && gisInited) {
-            isApiReady = true;
-            updateAuthorizeButtons(true, "Authorize");
-            const token = gapi.client.getToken();
-            updateSigninStatus(token !== null);
-        }
-    }
-
-    // === 4. EVENT LISTENERS SETUP ===
     function setupEventListeners() {
         elements.navLinks.forEach(link => link.addEventListener('click', e => { e.preventDefault(); showPage(link.dataset.page); }));
         elements.userCards.forEach(card => card.addEventListener('click', () => selectUser(card.dataset.user)));
@@ -131,26 +151,18 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('sendChatBtn').addEventListener('click', sendChatMessage);
         elements.chatInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendChatMessage(); });
     }
-    function syncOrFetchData(event) {
-        if (event.currentTarget.id.includes('Dashboard')) { fetchDashboardData(true); } else { syncWorkoutData(); }
-    }
 
-    // === 5. AUTHENTICATION & UI STATE ===
-    function updateAuthorizeButtons(enabled, text) {
-        document.querySelectorAll('[id^="authorizeBtn"]').forEach(btn => {
-            btn.disabled = !enabled;
-            btn.innerHTML = `<i class="fab fa-google"></i> ${text}`;
-        });
-    }
-    function handleAuthClick() {
+    window.handleAuthClick = function() {
         if (!isApiReady) { showNotification("Google API is not ready. Please try again.", "error"); return; }
         tokenClient.requestAccessToken({ prompt: 'consent' });
-    }
-    function handleAuthResponse(resp) {
+    };
+
+    window.handleAuthResponse = function(resp) {
         if (resp.error) { showNotification("Authorization failed. Check console.", "error"); updateSigninStatus(false); return; }
         updateSigninStatus(true);
-    }
-    function updateSigninStatus(isSignedIn) {
+    };
+
+    window.updateSigninStatus = function(isSignedIn) {
         document.querySelectorAll('[id^="authorizeBtn"]').forEach(btn => btn.classList.toggle('hidden', isSignedIn));
         document.querySelectorAll('[id^="syncBtn"], #globalSyncBtn').forEach(btn => btn.classList.toggle('hidden', !isSignedIn));
 
@@ -167,9 +179,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (!isSignedIn) {
             elements.dashboardContent.innerHTML = `<div class="dashboard-card"><p>Please authorize to view dashboard.</p></div>`;
         }
-    }
-
-    // === 6. CORE APP LOGIC: PAGE NAVIGATION & WORKOUT RENDERING ===
+    };
+    
     function showPage(pageId) {
         elements.pages.forEach(p => p.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
@@ -178,6 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchDashboardData(false);
         }
     }
+
     function renderHome() {
         elements.workoutGrid.innerHTML = '';
         Object.entries(workoutData).forEach(([day, workout]) => {
@@ -189,11 +201,13 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.workoutGrid.appendChild(card);
         });
     }
+
     function startWorkout(day) {
         currentDay = day;
         showPage('workoutScreen');
         loadWorkoutUI();
     }
+
     function loadWorkoutUI() {
         const workout = workoutData[currentDay];
         elements.currentWorkoutTitle.textContent = workout.name;
@@ -221,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.exerciseListContainer.querySelectorAll('.set-checkbox, .set-input').forEach(el => el.addEventListener('change', handleSetChange));
         elements.exerciseListContainer.querySelectorAll('.exercise-select').forEach(sel => sel.addEventListener('change', handleExerciseChange));
     }
+
     function handleExerciseChange(e) {
         const { ex } = e.target.dataset;
         if (!workoutProgress[currentDay]) { workoutProgress[currentDay] = { date: new Date().toISOString().split('T')[0], sets: {}, notes: '' }; }
@@ -228,6 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
         workoutProgress[currentDay].sets[ex].selectedExercise = e.target.value;
         saveWorkoutProgress();
     }
+
     function handleSetChange(e) {
         const row = e.target.closest('.set-row');
         const { ex, set } = row.dataset;
@@ -241,11 +257,13 @@ document.addEventListener('DOMContentLoaded', () => {
         row.classList.toggle('completed', workoutProgress[currentDay].sets[ex][set].completed);
         saveWorkoutProgress();
     }
+
     function saveNotes(e) {
         if (!workoutProgress[currentDay]) { workoutProgress[currentDay] = { date: new Date().toISOString().split('T')[0], sets: {}, notes: '' }; }
         workoutProgress[currentDay].notes = e.target.value;
         saveWorkoutProgress();
     }
+
     function resetCurrentWorkout() {
         if (confirm("Reset all entries for this session? This won't affect saved data in Google Sheets.") && workoutProgress[currentDay]) {
             delete workoutProgress[currentDay];
@@ -255,19 +273,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // === 7. DATA SYNC, FETCH & STORAGE ===
     function saveWorkoutProgress() {
         localStorage.setItem('workoutProgress', JSON.stringify(workoutProgress));
         if (gapi.client?.getToken()) {
             updateSigninStatus(true);
         }
     }
+
     function loadWorkoutProgress() {
         workoutProgress = JSON.parse(localStorage.getItem('workoutProgress') || '{}');
     }
+
     function hasPendingData() {
         return Object.values(workoutProgress).some(day => day.sets && Object.values(day.sets).some(ex => Object.values(ex).some(set => set.completed)));
     }
+
     async function syncWorkoutData() {
         if (!gapi.client?.getToken()) return showNotification("Please authorize first.", "error");
         const dataToSync = prepareDataForSheets();
@@ -283,6 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
             saveWorkoutProgress();
         } catch (error) { showNotification("Sync failed. Check console.", "error"); }
     }
+
     function prepareDataForSheets() {
         const rows = [];
         for (const dayKey in workoutProgress) {
@@ -305,6 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return rows;
     }
+
     async function fetchDashboardData(showNotificationOnFail = true) {
         if (!gapi.client?.getToken()) return;
         try {
@@ -321,6 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderDashboard();
         } catch (err) { if (showNotificationOnFail) showNotification("Failed to fetch dashboard data.", "error"); }
     }
+
     function renderDashboard() {
         const data = sheetData.filter(row => row.user === currentUser && (elements.dateRangeFilter.value === 'all' || (new Date() - row.date) / 86400000 <= parseInt(elements.dateRangeFilter.value)));
         if (data.length === 0) { elements.dashboardContent.innerHTML = `<div class="dashboard-card"><p>No data found for this selection.</p></div>`; return; }
@@ -329,47 +352,29 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.dashboardContent.innerHTML = `<div class="dashboard-card"><h3>Best Lift</h3><p style="font-size: 2rem; font-weight: 700;">${bestSet.weight}kg x ${bestSet.reps} reps</p><small>${bestSet.exercise}</small></div><div class="dashboard-card"><h3>Est. 1-Rep Max</h3><p style="font-size: 2rem; font-weight: 700;">${bestSet.e1RM.toFixed(1)}kg</p></div><div class="dashboard-card" style="grid-column: 1 / -1;"><div class="chart-container"><canvas id="progressChart"></canvas></div></div>`;
         renderProgressChart(data.filter(d => d.exercise === bestSet.exercise).sort((a, b) => a.date - b.date), "progressChart");
     }
-    function renderProgressChart(data, canvasId) { if (chartInstances[canvasId]) chartInstances[canvasId].destroy(); const ctx = document.getElementById(canvasId)?.getContext('2d'); if (ctx) chartInstances[canvasId] = new Chart(ctx, { type: 'line', data: { labels: data.map(d => d.date.toLocaleDateString()), datasets: [{ label: 'Estimated 1RM (kg)', data: data.map(d => d.e1RM.toFixed(1)), borderColor: 'var(--primary-color)', tension: 0.1, fill: true }] }, options: { responsive: true, maintainAspectRatio: false } }); }
 
-    // === 8. OTHER HELPER FUNCTIONS ===
+    function renderProgressChart(data, canvasId) { if (chartInstances[canvasId]) chartInstances[canvasId].destroy(); const ctx = document.getElementById(canvasId)?.getContext('2d'); if (ctx) chartInstances[canvasId] = new Chart(ctx, { type: 'line', data: { labels: data.map(d => d.date.toLocaleDateString()), datasets: [{ label: 'Estimated 1RM (kg)', data: data.map(d => d.e1RM.toFixed(1)), borderColor: 'var(--primary-color)', tension: 0.1, fill: true }] }, options: { responsive: true, maintainAspectRatio: false } }); }
+    
     function loadCurrentUser() { currentUser = localStorage.getItem('currentUser') || 'Harjas'; elements.userCards.forEach(c => c.classList.toggle('active', c.dataset.user === currentUser)); elements.workoutSectionTitle.textContent = `Select Workout for ${currentUser}`; }
     function selectUser(user) { currentUser = user; localStorage.setItem('currentUser', user); loadCurrentUser(); if (document.getElementById('dashboardScreen').classList.contains('active')) fetchDashboardData(false); }
     async function analyzeProgressWithAI() { showNotification("AI Analysis coming soon!", "info"); }
     async function clearGoogleSheet() { showNotification("Clear Sheet coming soon!", "info"); }
     async function sendChatMessage() {
-        const userMessage = elements.chatInput.value.trim();
-        if (!userMessage) return;
-        addChatMessage(userMessage, 'user');
-        elements.chatInput.value = '';
-        addChatMessage("<i>AI is thinking...</i>", 'ai');
+        const userMessage = elements.chatInput.value.trim(); if (!userMessage) return;
+        addChatMessage(userMessage, 'user'); elements.chatInput.value = ''; addChatMessage("<i>AI is thinking...</i>", 'ai');
         try {
             const response = await fetch('/.netlify/functions/ask-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'chat', payload: userMessage }) });
             if (!response.ok) throw new Error('Function Error');
             const data = await response.json();
             elements.chatMessages.querySelector('.ai-message:last-child').remove();
             addChatMessage(data.message.replace(/\n/g, '<br>').replace(/\*\*/g, '<strong>'), 'ai');
-        } catch (error) {
-            elements.chatMessages.querySelector('.ai-message:last-child').remove();
-            addChatMessage("Sorry, I'm having trouble connecting right now.", 'ai');
-        }
+        } catch (error) { elements.chatMessages.querySelector('.ai-message:last-child').remove(); addChatMessage("Sorry, I'm having trouble connecting right now.", 'ai'); }
     }
-    function addChatMessage(message, sender) {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `${sender}-message`;
-        msgDiv.innerHTML = `<p>${message}</p>`;
-        elements.chatMessages.appendChild(msgDiv);
-        elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
-    }
-    function showNotification(message, type = 'info') {
-        const el = document.createElement('div');
-        el.className = `notification ${type}`;
-        el.textContent = message;
-        document.body.appendChild(el);
-        setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; }, 10);
-        setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 400); }, 4000);
-    }
+    function addChatMessage(message, sender) { const msgDiv = document.createElement('div'); msgDiv.className = `${sender}-message`; msgDiv.innerHTML = `<p>${message}</p>`; elements.chatMessages.appendChild(msgDiv); elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight; }
+    function showNotification(message, type = 'info') { const el = document.createElement('div'); el.className = `notification ${type}`; el.textContent = message; document.body.appendChild(el); setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; }, 10); setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 4000); }, 4000); }
+    function updateAuthorizeButtons(enabled, text) { document.querySelectorAll('[id^="authorizeBtn"]').forEach(btn => { btn.disabled = !enabled; btn.innerHTML = `<i class="fab fa-google"></i> ${text}`; }); }
 
-    // Initialize the application
+    // Initial setup call
     setupEventListeners();
     loadCurrentUser();
     loadWorkoutProgress();

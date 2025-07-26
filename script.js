@@ -6,24 +6,20 @@ const GOOGLE_CONFIG = {
   SCOPES: 'https://www.googleapis.com/auth/spreadsheets',
 };
 
-// =================================================================================
-// FIXED & COMPLETE: WORKOUT DATA FROM YOUR PDF (FIXES EXERCISES NOT SHOWING)
-// This object now contains the full workout regime, including alternatives.
-// =================================================================================
 const workoutData = {
     1: { name: "Push Day 1", bodyPart: "Push", exercises: [
         { name: "BB Flat Bench Press", sets: 4, reps: "10, 8, 6, 4", alternatives: ["Machine bench press", "incline bench press", "db flat bench press"] },
         { name: "DB Incline Press", sets: 3, reps: "12, 8, 6", alternatives: ["Incline bench press", "machine incline bench press", "flat db bench press"] },
         { name: "DB Shoulder Press", sets: 4, reps: "15, 12, 10, 6", alternatives: ["Machine shoulder press", "barbell shoulder press", "shoulder front raises"] },
         { name: "Cable Straight Pushdown", sets: 3, reps: "15, 12, 10 + 1 drop set", alternatives: ["Rope pushdowns", "single hand cable pushdowns", "skull crushers"] },
-        { name: "DB Lateral Raises", sets: 4, reps: "12, 10, 8, (5 peak hold, 10 full, 10 partial, 5 full)", alternatives: ["Upright rows", "laying lateral raises"] },
+        { name: "DB Lateral Raises", sets: 4, reps: "12, 10, 8, complex", alternatives: ["Upright rows", "laying lateral raises"] },
         { name: "Overhead Tricep Extension", sets: 3, reps: "15, 12, 10", alternatives: ["Rope pushdowns", "single hand cable pushdowns", "skull crushers"] },
         { name: "Cable Chest Fly (slow reps)", sets: 3, reps: "20, 16, 12", alternatives: ["Machine fly", "db fly"] }
     ]},
     2: { name: "Pull Day 1", bodyPart: "Pull", exercises: [
-        { name: "Lat Pulldown", sets: 4, reps: "12, 10, 6, 6 peak contraction", alternatives: ["DB row", "barbell row", "pull ups"] },
+        { name: "Lat Pulldown", sets: 4, reps: "12, 10, 6, 6 peak", alternatives: ["DB row", "barbell row", "pull ups"] },
         { name: "Deadlift", sets: 4, reps: "10, 8, 6, 4", alternatives: ["Back extension", "db deadlift"] },
-        { name: "Seated Close Grip Row", sets: 4, reps: "12, 10, 10, 10 peak holds", alternatives: ["Row with narrow bar", "row with wide bar", "db and bb row"] },
+        { name: "Seated Close Grip Row", sets: 4, reps: "12, 10, 10, 10 peak", alternatives: ["Row with narrow bar", "row with wide bar", "db and bb row"] },
         { name: "Rope Pull Overs", sets: 3, reps: "16, 12, 10", alternatives: ["Pull over with db"] },
         { name: "DB Hammer Curls", sets: 3, reps: "15, 12, 10", alternatives: ["DB curls", "preacher curls"] },
         { name: "Preacher Curls", sets: 4, reps: "16, 12, 10, 8", alternatives: ["DB curls", "seated curls"] },
@@ -31,7 +27,7 @@ const workoutData = {
     ]},
     3: { name: "Leg Day", bodyPart: "Legs", exercises: [
         { name: "BB Squat", sets: 4, reps: "15, 10, 6, 4", alternatives: ["Hack squats", "leg press"] },
-        { name: "Lunges", sets: 3, reps: "8 strides per leg", alternatives: ["Reverse squat", "romanian deadlift"] },
+        { name: "Lunges", sets: 3, reps: "8 strides/leg", alternatives: ["Reverse squat", "romanian deadlift"] },
         { name: "Sumo Stance Leg Press", sets: 3, reps: "12, 10, 8", alternatives: ["Glute bridges", "goblet squat", "sumo squat"] },
         { name: "Hamstring Curls", sets: 3, reps: "15, 12, 10", alternatives: ["Reverse hamstring curls"] },
         { name: "Legs Extension", sets: 3, reps: "15, 12, 10", alternatives: ["Adductors", "hack squat full depth"] },
@@ -40,7 +36,7 @@ const workoutData = {
     4: { name: "Push Day 2", bodyPart: "Push", exercises: [
         { name: "BB Incline Bench", sets: 2, reps: "12, 10", alternatives: ["Machine bench press", "db flat bench press"] },
         { name: "Cambered Bar Front Raise", sets: 3, reps: "15, 12, 10", alternatives: ["DB front raise", "plate front raise"] },
-        { name: "Cable Rope Face Pulls w/ Rear Delt Fly", sets: 3, reps: "12, 10, 8 for both", alternatives: ["Bent over delt fly"] },
+        { name: "Cable Rope Face Pulls w/ Rear Delt Fly", sets: 3, reps: "12, 10, 8 each", alternatives: ["Bent over delt fly"] },
         { name: "Lowest Angle Chest Fly", sets: 3, reps: "15, 12, 10", alternatives: ["Machine fly", "db fly"] },
         { name: "Front Plate Raise", sets: 2, reps: "20, 16", alternatives: ["DB front raise"] },
         { name: "Close Grip Bench Press", sets: 2, reps: "15, 12", alternatives: ["Tricep dips"] },
@@ -61,7 +57,6 @@ const workoutData = {
         { name: "Superset: Hammer Curls Drop Set / Single Arm Tricep", sets: 2, reps: "(15, 12, 10) - 10", alternatives: [] }
     ]}
 };
-
 
 let currentUser = 'Harjas';
 let currentDay = 1;
@@ -161,10 +156,27 @@ function updateSigninStatus(isSignedIn) {
     }
 }
 
-// =================================================================================
-// FIXED: WORKOUT UI RENDERING
-// This function now builds the exercise list with dropdowns for alternatives.
-// =================================================================================
+// === UI RENDERING & WORKOUT LOGIC ===
+
+function renderHome() {
+    workoutGrid.innerHTML = '';
+    Object.entries(workoutData).forEach(([day, workout]) => {
+        const card = document.createElement('div');
+        card.className = 'day-card';
+        card.dataset.day = day;
+        card.innerHTML = `<i class="fas fa-dumbbell"></i><h3>${workout.name}</h3>`;
+        card.addEventListener('click', () => startWorkout(day));
+        workoutGrid.appendChild(card);
+    });
+}
+
+// FIXED: This function now correctly calls loadWorkoutUI
+function startWorkout(day) {
+    currentDay = day;
+    showPage('workoutScreen');
+    loadWorkoutUI(); // This renders the exercises
+}
+
 function loadWorkoutUI() {
     const workout = workoutData[currentDay];
     document.getElementById('currentWorkoutTitle').textContent = workout.name;
@@ -174,7 +186,6 @@ function loadWorkoutUI() {
     const progress = workoutProgress[currentDay] || { date: new Date().toISOString().split('T')[0], sets: {}, notes: '' };
 
     workout.exercises.forEach((exercise, exIndex) => {
-        // Create the dropdown for alternatives
         let optionsHtml = `<option value="${exercise.name}">${exercise.name}</option>`;
         if (exercise.alternatives && exercise.alternatives.length > 0) {
             exercise.alternatives.forEach(alt => {
@@ -182,12 +193,9 @@ function loadWorkoutUI() {
             });
         }
         
-        // Check if a different exercise was previously selected and stored
         const selectedExerciseName = progress.sets?.[exIndex]?.selectedExercise || exercise.name;
-        // Update the select dropdown to show the correct selected value
         const selectHtml = `<select class="exercise-select" data-ex="${exIndex}">${optionsHtml.replace(`value="${selectedExerciseName}"`, `value="${selectedExerciseName}" selected`)}</select>`;
         
-        // Create the set rows
         let setsHtml = '';
         for (let setIndex = 0; setIndex < exercise.sets; setIndex++) {
             const p = progress.sets?.[exIndex]?.[setIndex] || {};
@@ -199,7 +207,6 @@ function loadWorkoutUI() {
             </div>`;
         }
 
-        // Combine everything into the exercise card
         container.innerHTML += `<div class="exercise-card">
             <div class="exercise-header">
                 ${selectHtml}
@@ -210,12 +217,10 @@ function loadWorkoutUI() {
     });
 
     document.getElementById('workoutNotes').value = progress.notes || '';
-    // Add event listeners to newly created elements
     container.querySelectorAll('.set-checkbox, .set-input').forEach(el => el.addEventListener('change', handleSetChange));
     container.querySelectorAll('.exercise-select').forEach(sel => sel.addEventListener('change', handleExerciseChange));
 }
 
-// NEW: Event handler for the exercise dropdown
 function handleExerciseChange(e) {
     const selectElement = e.target;
     const exIndex = selectElement.dataset.ex;
@@ -227,11 +232,9 @@ function handleExerciseChange(e) {
     if (!workoutProgress[currentDay].sets[exIndex]) {
         workoutProgress[currentDay].sets[exIndex] = {};
     }
-    // Store the selected exercise name in our progress object
     workoutProgress[currentDay].sets[exIndex].selectedExercise = selectedExercise;
     saveWorkoutProgress();
 }
-
 
 function handleSetChange(e) {
     const row = e.target.closest('.set-row');
@@ -247,11 +250,13 @@ function handleSetChange(e) {
     row.classList.toggle('completed', workoutProgress[currentDay].sets[ex][set].completed);
     saveWorkoutProgress();
 }
+
 function saveNotes(e) {
     if (!workoutProgress[currentDay]) { workoutProgress[currentDay] = { date: new Date().toISOString().split('T')[0], sets: {}, notes: '' }; }
     workoutProgress[currentDay].notes = e.target.value;
     saveWorkoutProgress();
 }
+
 function resetCurrentWorkout() {
     if (!confirm("Are you sure you want to reset all entries for this workout session?")) return;
     if (workoutProgress[currentDay]) {
@@ -293,7 +298,6 @@ async function syncWorkoutData() {
     } catch (error) { showNotification("Sync failed. Check console.", "error"); }
 }
 
-// FIXED: This function now correctly gets the selected exercise name for syncing
 function prepareDataForSheets() {
     const rows = [];
     for (const dayKey in workoutProgress) {
@@ -305,8 +309,46 @@ function prepareDataForSheets() {
         Object.keys(progress.sets).forEach(exIndex => {
             const defaultExercise = workout.exercises[exIndex];
             if (!defaultExercise) return;
-            // Use the selected exercise if it exists, otherwise use the default
             const exerciseName = progress.sets[exIndex].selectedExercise || defaultExercise.name;
 
             Object.keys(progress.sets[exIndex]).forEach(setIndex => {
-                if (setIndex === 'selectedExercise') return; // Skip our custom
+                if (setIndex === 'selectedExercise') return;
+                const set = progress.sets[exIndex][setIndex];
+                if (set.completed && (set.weight || set.reps)) {
+                    rows.push([
+                        progress.date, workout.name, exerciseName, parseInt(setIndex) + 1,
+                        set.weight || 0, set.reps || 0, currentUser,
+                        noteAdded ? "" : (progress.notes || "")
+                    ]);
+                    noteAdded = true;
+                }
+            });
+        });
+    }
+    return rows;
+}
+
+async function fetchDashboardData(showNotificationOnFail = true) {
+    if (!gapi.client.getToken()) return;
+    try {
+        const response = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID, range: 'WorkoutLog!A2:H' });
+        sheetData = (response.result.values || []).map(row => {
+            const dayName = row[1];
+            const dayKey = Object.keys(workoutData).find(d => workoutData[d].name === dayName);
+            const bodyPart = dayKey ? workoutData[dayKey].bodyPart : 'Unknown';
+            return {
+                date: new Date(row[0] + 'T00:00:00'), day: dayName, exercise: row[2],
+                set: parseInt(row[3]), weight: parseFloat(row[4]) || 0, reps: parseInt(row[5]) || 0,
+                user: row[6], notes: row[7], bodyPart: bodyPart,
+            };
+        });
+        if (showNotificationOnFail) showNotification('Dashboard data synced.', 'success');
+        populateBodyPartFilter();
+        handleDateRangeChange();
+    } catch (err) {
+        if (showNotificationOnFail) showNotification("Failed to fetch dashboard data.", "error");
+    }
+}
+
+// === HELPER FUNCTIONS (UNCHANGED) ===
+function showPage(pageId){const pages=document.querySelectorAll(".page"),navLinks=document.querySelectorAll(".nav-link");pages.forEach(p=>p.classList.remove("active")),document.getElementById(pageId).classList.add("active"),navLinks.forEach(l=>l.classList.toggle("active",l.dataset.page===pageId)),"dashboardScreen"===pageId&&updateSigninStatus(gapi.client.getToken()!==null)}function loadCurrentUser(){currentUser=localStorage.getItem("currentUser")||"Harjas",updateUserCards()}function selectUser(user){currentUser=user,localStorage.setItem("currentUser",user),updateUserCards(),document.getElementById("dashboardScreen").classList.contains("active")&&fetchDashboardData(!1)}function updateUserCards(){document.querySelectorAll(".user-card").forEach(card=>card.classList.toggle("active",card.dataset.user===currentUser)),document.getElementById("workout-section-title").textContent=`Select Workout for ${currentUser}`}function handleDateRangeChange(){const range=document.getElementById("dateRangeFilter").value,customContainer=document.getElementById("customDateContainer");if(customContainer.classList.toggle("hidden","custom"!==range),"custom"!==range){const endDate=new Date,startDate=new Date;"all"===range?startDate.setFullYear(startDate.getFullYear()-10):startDate.setDate(endDate.getDate()-parseInt(range)),document.getElementById("endDateFilter").valueAsDate=endDate,document.getElementById("startDateFilter").valueAsDate=startDate}renderDashboard()}function populateBodyPartFilter(){const bodyParts=[...new Set(sheetData.filter(row=>row.user===currentUser).map(row=>row.bodyPart))].filter(Boolean),filter=document.getElementById("bodyPartFilter");for(filter.innerHTML='<option value="all">All Body Parts</option>';bodyParts.length>0;){const bp=bodyParts.shift();filter.innerHTML+=`<option value="${bp}">${bp}</option>`}populateExerciseFilter()}function populateExerciseFilter(){const bodyPart=document.getElementById("bodyPartFilter").value,exercises=[...new Set(sheetData.filter(row=>row.user===currentUser&&("all"===bodyPart||row.bodyPart===bodyPart)).map(row=>row.exercise))].filter(Boolean),filter=document.getElementById("exerciseFilter");for(filter.innerHTML='<option value="all">All Exercises</option>';exercises.length>0;){const ex=exercises.shift();filter.innerHTML+=`<option value="${ex}">${ex}</option>`}filter.disabled=0===exercises.length}function renderDashboard(){const bodyPart=document.getElementById("bodyPartFilter").value,exercise=document.getElementById("exerciseFilter").value,startDateVal=document.getElementById("startDateFilter").value,endDateVal=document.getElementById("endDateFilter").value,startDate=startDateVal?new Date(startDateVal+"T00:00:00"):null,endDate=endDateVal?new Date(endDateVal+"T23:59:59"):null,data=sheetData.filter(row=>row.user===currentUser&&("all"===bodyPart||row.bodyPart===bodyPart)&&("all"===exercise||row.exercise===exercise)&&(!startDate||row.date>=startDate)&&(!endDate||row.date<=endDate));if(0===data.length)return void(dashboardContent.innerHTML='<div class="dashboard-card"><p>No data found for this selection.</p></div>');const e1RM=(w,r)=>r>0?w*(1+r/30):0;data.forEach(row=>row.e1RM=e1RM(row.weight,row.reps));const bestSet=data.reduce((max,row)=>row.e1RM>max.e1RM?row:max,{e1RM:0}),progressData=data.filter(row=>row.exercise===bestSet.exercise).sort((a,b)=>a.date-b.date),strengthChange=progressData.length>1?(progressData[progressData.length-1].e1RM-progressData[0].e1RM)/progressData[0].e1RM*100:0;dashboardContent.innerHTML=`<div class="dashboard-card"><h3>Best Lift</h3><p style="font-size: 2rem; font-weight: 700;">${bestSet.weight} kg x ${bestSet.reps} reps</p><small>${bestSet.exercise}</small></div><div class="dashboard-card"><h3>Est. 1-Rep Max</h3><p style="font-size: 2rem; font-weight: 700;">${bestSet.e1RM.toFixed(1)} kg</p><small>Your estimated strength score.</small></div><div class="dashboard-card tip-card"><h3><i class="fas fa-lightbulb"></i>Quick Tip</h3><p>${generateAITip(strengthChange,bestSet.reps)}</p></div><div id="aiAnalysisCard" class="dashboard-card" style="grid-column: 1 / -1; display: none;"><h3>AI Analysis</h3><div id="aiAnalysisContent"></div></div><div class="dashboard-card" style="grid-column: 1 / -1;"><div class="chart-container"><canvas id="progressChart"></canvas></div></div>`,renderProgressChart(progressData,"progressChart")}function renderProgressChart(data,canvasId){if(chartInstances[canvasId])chartInstances[canvasId].destroy();const ctx=document.getElementById(canvasId)?.getContext("2d");if(ctx)chartInstances[canvasId]=new Chart(ctx,{type:"line",data:{labels:data.map(d=>d.date.toLocaleDateString()),datasets:[{label:"Estimated 1RM (kg)",data:data.map(d=>d.e1RM.toFixed(1)),borderColor:"var(--primary-color)",tension:.1,fill:!0}]},options:{responsive:!0,maintainAspectRatio:!1}})}function generateAITip(change,reps){return change>5?`Incredible progress! Your strength has increased by ${change.toFixed(1)}%. Consider a slight weight increase to continue this trend.`:change>0?"Nice work, you're making steady gains. Keep up the consistency.":reps<6?"You're lifting heavy! To maximize muscle growth, ensure you're also incorporating sets in the 8-12 rep range.":reps>15?"Great endurance! To build more top-end strength, try increasing the weight so your reps fall in the 6-10 range.":"Consistency is key. You're laying the foundation for future progress. Keep showing up!"}async function analyzeProgressWithAI(){if(!gapi.client.getToken())return showNotification("Please authorize first.","error");const exercise=document.getElementById("exerciseFilter").value;if("all"===exercise)return showNotification("Please select a specific exercise to analyze.","info");const analysisCard=document.getElementById("aiAnalysisCard"),analysisContent=document.getElementById("aiAnalysisContent");analysisCard.style.display="block",analysisContent.innerHTML="<p>AI is analyzing your progress...</p>";const data=sheetData.filter(row=>row.user===currentUser&&row.exercise===exercise).sort((a,b)=>a.date-b.date);if(data.length<2)return void(analysisContent.innerHTML="<p>Not enough data to analyze. Please complete at least two sessions for this exercise.</p>");const summary=`User: ${currentUser}. Exercise: ${exercise}. Performance History (last 5 sessions): ${data.slice(-5).map(d=>`${d.date.toLocaleDateString()}: ${d.weight}kg x ${d.reps}reps`).join(", ")}`;try{const response=await fetch("/.netlify/functions/ask-ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"analysis",payload:summary})});if(!response.ok)throw new Error("AI analysis failed.");const{message}=await response.json();analysisContent.innerHTML=message.replace(/\n/g,"<br>").replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")}catch(error){analysisContent.innerHTML="<p>Sorry, the AI analysis could not be completed at this time.</p>"}}async function clearGoogleSheet(){if(!gapi.client.getToken())return showNotification("Please authorize first.","error");if(!confirm("This will delete ALL data for BOTH users from the Google Sheet. This action cannot be undone. Are you sure?"))return;showNotification("Clearing sheet data...","info");try{await gapi.client.sheets.spreadsheets.values.clear({spreadsheetId:GOOGLE_CONFIG.SPREADSHEET_ID,range:"WorkoutLog!A2:H"}),sheetData=[],renderDashboard(),showNotification("All data has been cleared from your Google Sheet.","success")}catch(err){showNotification("Failed to clear sheet data.","error")}}function setupAIChatListeners(){const chatModal=document.getElementById("aiChatModal");document.getElementById("chatToggleBtn").addEventListener("click",()=>chatModal.classList.add("active")),document.getElementById("closeChatBtn").addEventListener("click",()=>chatModal.classList.remove("active")),document.getElementById("sendChatBtn").addEventListener("click",sendChatMessage),document.getElementById("chatInput").addEventListener("keypress",e=>{"Enter"===e.key&&sendChatMessage()})}function addChatMessage(message,sender){const container=document.getElementById("chatMessages"),msgDiv=document.createElement("div");msgDiv.className=`${sender}-message`,msgDiv.innerHTML=`<p>${message}</p>`,container.appendChild(msgDiv),container.scrollTop=container.scrollHeight}async function sendChatMessage(){const input=document.getElementById("chatInput"),userMessage=input.value.trim();if(!userMessage)return;addChatMessage(userMessage,"user"),input.value="",addChatMessage("<i>AI is thinking...</i>","ai");try{const response=await fetch("/.netlify/functions/ask-ai",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:"chat",payload:userMessage})});if(!response.ok)throw new Error(`Function Error: ${response.statusText}`);const data=await response.json();document.querySelector(".ai-message:last-child").remove(),addChatMessage(data.message.replace(/\n/g,"<br>").replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>"),"ai")}catch(error){document.querySelector(".ai-message:last-child").remove(),addChatMessage("Sorry, I'm having trouble connecting right now.","ai")}}function showNotification(message,type="info"){const el=document.createElement("div");el.className=`notification ${type}`,el.textContent=message,document.body.appendChild(el),setTimeout(()=>{el.style.opacity="1",el.style.transform="translateY(0)"},10),setTimeout(()=>{el.style.opacity="0",setTimeout(()=>el.remove(),4e3)}}

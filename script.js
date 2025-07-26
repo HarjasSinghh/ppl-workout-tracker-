@@ -6,8 +6,6 @@ const GOOGLE_CONFIG = {
     SPREADSHEET_ID: '15O-z40Jsy2PFs0XaXle07g_hJuwBCgpEi399TC9Yaic',
     SCOPES: "https://www.googleapis.com/auth/spreadsheets",
 };
-// Note: AI_CONFIG is no longer needed here as the key is now secure on the server.
-
 const workoutData = {
     1: { name: "Push Day 1", bodyPart: "Push", exercises: [{ name: "BB Flat Bench Press", sets: 4 }, { name: "DB Incline Press", sets: 3 }, { name: "DB Shoulder Press", sets: 4 }, { name: "Cable Straight Pushdown", sets: 3 }, { name: "DB Lateral Raises", sets: 4 }, { name: "Overhead Tricep Extension", sets: 3 }] },
     2: { name: "Pull Day 1", bodyPart: "Pull", exercises: [{ name: "Lat Pulldown", sets: 4 }, { name: "Deadlift", sets: 4 }, { name: "Barbell Shrugs", sets: 4 }, { name: "Seated Cable Row", sets: 4 }, { name: "DB Hammer Curls", sets: 3 }] },
@@ -16,15 +14,11 @@ const workoutData = {
     5: { name: "Pull Day 2", bodyPart: "Pull", exercises: [{ name: "Close Grip Lat Pulldown", sets: 3 }, { name: "BB Row", sets: 3 }, { name: "Face Pulls", sets: 3 }, { name: "Incline Curls", sets: 3 }] },
     6: { name: "Arms Day", bodyPart: "Arms", exercises: [{ name: "Cable EZ Bar Curls", sets: 4 }, { name: "Tricep Pushdowns", sets: 4 }, { name: "Preacher Curls", sets: 3 }, { name: "Wrist Curls", sets: 3 }, { name: "Farmer Walks", sets: 3 }] }
 };
-
-let currentDay = 1, workoutProgress = {}, gapiInited = false, gisInited = false, tokenClient, sheetData = [], chartInstances = {};
-
+let currentUser = 'Harjas', currentDay = 1, workoutProgress = {}, gapiInited = false, gisInited = false, tokenClient, sheetData = [], chartInstances = {};
 // --- INITIALIZATION & CORE APP LOGIC ---
 window.gapiLoaded = () => gapi.load('client', initializeGapiClient);
 window.gisLoaded = () => {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CONFIG.CLIENT_ID, scope: GOOGLE_CONFIG.SCOPES, callback: handleAuthResponse,
-    });
+    tokenClient = google.accounts.oauth2.initTokenClient({ client_id: GOOGLE_CONFIG.CLIENT_ID, scope: GOOGLE_CONFIG.SCOPES, callback: handleAuthResponse });
     gisInited = true; checkAuthButton();
 };
 async function initializeGapiClient() {
@@ -32,23 +26,33 @@ async function initializeGapiClient() {
     gapiInited = true; checkAuthButton();
 }
 document.addEventListener('DOMContentLoaded', () => {
-    workoutProgress = JSON.parse(localStorage.getItem('workoutProgress')) || {};
+    loadCurrentUser(); workoutProgress = JSON.parse(localStorage.getItem('workoutProgress')) || {};
     setupEventListeners(); showPage('homeScreen');
 });
-
 function setupEventListeners() {
     document.querySelectorAll('.nav-link').forEach(link => link.addEventListener('click', e => { e.preventDefault(); showPage(link.dataset.page); }));
     document.querySelectorAll('.day-card').forEach(card => card.addEventListener('click', () => startWorkout(card.dataset.day)));
+    document.querySelectorAll('.user-card').forEach(card => card.addEventListener('click', () => selectUser(card.dataset.user)));
     document.getElementById('backToHomeBtn').addEventListener('click', () => showPage('homeScreen'));
     document.getElementById('authorizeBtn').addEventListener('click', handleAuthClick);
     document.getElementById('syncDataBtn').addEventListener('click', syncWorkoutData);
     document.getElementById('resetWorkoutBtn').addEventListener('click', resetCurrentWorkout);
     document.getElementById('refreshDataBtn').addEventListener('click', fetchDashboardData);
+    document.getElementById('analyzeProgressBtn').addEventListener('click', analyzeProgressWithAI);
     document.getElementById('clearSheetBtn').addEventListener('click', clearGoogleSheet);
     ['bodyPartFilter', 'exerciseFilter', 'startDateFilter', 'endDateFilter'].forEach(id => document.getElementById(id).addEventListener('change', renderDashboard));
     setupAIChatListeners();
 }
-
+// --- USER MANAGEMENT ---
+function loadCurrentUser() {
+    currentUser = localStorage.getItem('currentUser') || 'Harjas';
+    document.querySelectorAll('.user-card').forEach(card => card.classList.toggle('active', card.dataset.user === currentUser));
+    document.getElementById('workout-section-title').textContent = `Select Workout for ${currentUser}`;
+}
+function selectUser(user) {
+    currentUser = user; localStorage.setItem('currentUser', user); loadCurrentUser();
+    if (document.getElementById('dashboardScreen').classList.contains('active')) fetchDashboardData();
+}
 // --- UI & NAVIGATION ---
 function showPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -56,15 +60,11 @@ function showPage(pageId) {
     document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page === pageId));
     if (pageId === 'dashboardScreen' && sheetData.length === 0) fetchDashboardData();
 }
-function startWorkout(day) {
-    currentDay = day; loadWorkoutUI(); showPage('workoutScreen');
-}
+function startWorkout(day) { currentDay = day; loadWorkoutUI(); showPage('workoutScreen'); }
 function loadWorkoutUI() {
     const workout = workoutData[currentDay];
     document.getElementById('currentWorkoutTitle').textContent = workout.name;
-    document.getElementById('resetWorkoutBtn').style.display = 'flex';
-    const container = document.getElementById('exerciseListContainer');
-    container.innerHTML = '';
+    const container = document.getElementById('exerciseListContainer'); container.innerHTML = '';
     workout.exercises.forEach((exercise, i) => {
         const setsHtml = Array.from({ length: exercise.sets }, (_, j) => {
             const p = workoutProgress[currentDay]?.[i]?.sets?.[j] || {};
@@ -77,49 +77,30 @@ function loadWorkoutUI() {
     container.querySelectorAll('.set-checkbox, .set-input').forEach(el => el.addEventListener('change', handleSetChange));
 }
 function handleSetChange(e) {
-    const row = e.target.closest('.set-row');
-    const { ex, set } = row.dataset;
+    const row = e.target.closest('.set-row'); const { ex, set } = row.dataset;
     const progress = workoutProgress[currentDay] = workoutProgress[currentDay] || {};
     progress[ex] = progress[ex] || { sets: {} };
-    progress[ex].sets[set] = {
-        completed: row.querySelector('.set-checkbox').checked,
-        weight: row.querySelector('input[placeholder="kg"]').value,
-        reps: row.querySelector('input[placeholder="reps"]').value,
-    };
+    progress[ex].sets[set] = { completed: row.querySelector('.set-checkbox').checked, weight: row.querySelector('input[placeholder="kg"]').value, reps: row.querySelector('input[placeholder="reps"]').value, };
     row.classList.toggle('completed', progress[ex].sets[set].completed);
     localStorage.setItem('workoutProgress', JSON.stringify(workoutProgress));
 }
 function resetCurrentWorkout() {
     if (!confirm("Are you sure you want to reset all entries for this workout session? This will not affect your Google Sheet.")) return;
-    if (workoutProgress[currentDay]) {
-        delete workoutProgress[currentDay];
-        localStorage.setItem('workoutProgress', JSON.stringify(workoutProgress));
-        loadWorkoutUI();
-        showNotification("Workout session has been reset.", "info");
-    }
+    if (workoutProgress[currentDay]) { delete workoutProgress[currentDay]; localStorage.setItem('workoutProgress', JSON.stringify(workoutProgress)); loadWorkoutUI(); showNotification("Workout session has been reset.", "info"); }
 }
-
 // --- AUTHENTICATION & SYNC ---
 function checkAuthButton() { if (gapiInited && gisInited) document.getElementById('authorizeBtn').style.visibility = 'visible'; }
 function handleAuthClick() { if (gapi.client.getToken() === null) tokenClient.requestAccessToken({ prompt: 'consent' }); }
 function handleAuthResponse(resp) { if (resp.error) throw resp; updateSigninStatus(true); }
-function updateSigninStatus(isSignedIn) {
-    document.getElementById('authorizeBtn').style.display = isSignedIn ? 'none' : 'block';
-    document.getElementById('syncDataBtn').style.display = isSignedIn ? 'block' : 'none';
-}
+function updateSigninStatus(isSignedIn) { document.getElementById('authorizeBtn').style.display = isSignedIn ? 'none' : 'block'; document.getElementById('syncDataBtn').style.display = isSignedIn ? 'block' : 'none'; }
 async function syncWorkoutData() {
     if (!gapi.client.getToken()) return showNotification("Please authorize first.", "error");
     const dataToSync = prepareDataForSheets();
     if (dataToSync.length === 0) return showNotification("No completed sets to sync.", "info");
     showNotification("Syncing workout...", "info");
     try {
-        await gapi.client.sheets.spreadsheets.values.append({
-            spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID, range: 'WorkoutLog!A1',
-            valueInputOption: 'USER_ENTERED', insertDataOption: 'INSERT_ROWS', resource: { values: dataToSync },
-        });
-        showNotification("Workout synced successfully!", "success");
-        delete workoutProgress[currentDay];
-        localStorage.setItem('workoutProgress', JSON.stringify(workoutProgress));
+        await gapi.client.sheets.spreadsheets.values.append({ spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID, range: 'WorkoutLog!A1', valueInputOption: 'USER_ENTERED', insertDataOption: 'INSERT_ROWS', resource: { values: dataToSync }, });
+        showNotification("Workout synced successfully!", "success"); delete workoutProgress[currentDay]; localStorage.setItem('workoutProgress', JSON.stringify(workoutProgress));
     } catch (error) { console.error('Sync Error:', error); showNotification("Sync failed. Check console.", "error"); }
 }
 function prepareDataForSheets() {
@@ -129,49 +110,38 @@ function prepareDataForSheets() {
     Object.keys(progress).forEach(exIndex => {
         Object.keys(progress[exIndex].sets).forEach(setIndex => {
             const set = progress[exIndex].sets[setIndex];
-            if (set.completed) rows.push([workoutDate, workout.name, workout.bodyPart, workout.exercises[exIndex].name, set.weight || 0, set.reps || 0]);
+            if (set.completed) rows.push([workoutDate, workout.name, workout.bodyPart, workout.exercises[exIndex].name, set.weight || 0, set.reps || 0, currentUser]);
         });
     });
     return rows;
 }
 async function clearGoogleSheet() {
-    if (!confirm("Are you sure you want to delete ALL data from your Google Sheet? This action cannot be undone.")) return;
+    if (!confirm(`This will delete ALL data for BOTH users from the Google Sheet. This action cannot be undone. Are you sure?`)) return;
     if (!gapi.client.getToken()) return showNotification("Please authorize first.", "error");
     showNotification("Clearing sheet data...", "info");
     try {
         await gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID, range: 'WorkoutLog!A2:G' });
-        sheetData = []; renderDashboard();
-        showNotification("All data has been cleared from your Google Sheet.", "success");
+        sheetData = []; renderDashboard(); showNotification("All data has been cleared from your Google Sheet.", "success");
     } catch (err) { console.error("Error clearing sheet:", err); showNotification("Failed to clear sheet data.", "error"); }
 }
-
 // --- DASHBOARD & ANALYTICS ---
 async function fetchDashboardData() {
-    if (!gapi.client.getToken()) {
-        const dashboardContent = document.getElementById('dashboardContent');
-        dashboardContent.innerHTML = `<div class="dashboard-card"><p>Please authorize to view dashboard.</p></div>`;
-        return;
-    }
+    if (!gapi.client.getToken()) { document.getElementById('dashboardContent').innerHTML = `<div class="dashboard-card"><p>Please authorize to view dashboard.</p></div>`; return; }
     try {
-        const response = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID, range: 'WorkoutLog!A2:F' });
-        sheetData = (response.result.values || []).map(row => ({
-            date: new Date(row[0]), bodyPart: row[2], exercise: row[3],
-            weight: parseFloat(row[4]) || 0, reps: parseInt(row[5]) || 0,
-        }));
+        const response = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: GOOGLE_CONFIG.SPREADSHEET_ID, range: 'WorkoutLog!A2:G' });
+        sheetData = (response.result.values || []).map(row => ({ date: new Date(row[0]), bodyPart: row[2], exercise: row[3], weight: parseFloat(row[4]) || 0, reps: parseInt(row[5]) || 0, user: row[6] }));
         populateBodyPartFilter(); populateExerciseFilter(); renderDashboard();
     } catch (err) { console.error("Error fetching data:", err); }
 }
 function populateBodyPartFilter() {
-    const bodyParts = [...new Set(sheetData.map(row => row.bodyPart))].filter(Boolean);
-    const filter = document.getElementById('bodyPartFilter');
-    filter.innerHTML = '<option value="all">All Body Parts</option>';
+    const bodyParts = [...new Set(sheetData.filter(row => row.user === currentUser).map(row => row.bodyPart))].filter(Boolean);
+    const filter = document.getElementById('bodyPartFilter'); filter.innerHTML = '<option value="all">All Body Parts</option>';
     bodyParts.forEach(bp => filter.innerHTML += `<option value="${bp}">${bp}</option>`);
 }
 function populateExerciseFilter() {
     const bodyPart = document.getElementById('bodyPartFilter').value;
-    const exercises = [...new Set(sheetData.filter(row => bodyPart === 'all' || row.bodyPart === bodyPart).map(row => row.exercise))].filter(Boolean);
-    const filter = document.getElementById('exerciseFilter');
-    filter.innerHTML = '<option value="all">All Exercises</option>';
+    const exercises = [...new Set(sheetData.filter(row => row.user === currentUser && (bodyPart === 'all' || row.bodyPart === bodyPart)).map(row => row.exercise))].filter(Boolean);
+    const filter = document.getElementById('exerciseFilter'); filter.innerHTML = '<option value="all">All Exercises</option>';
     exercises.forEach(ex => filter.innerHTML += `<option value="${ex}">${ex}</option>`);
     filter.disabled = false;
 }
@@ -179,34 +149,22 @@ function renderDashboard() {
     const bodyPart = document.getElementById('bodyPartFilter').value, exercise = document.getElementById('exerciseFilter').value;
     const startDateVal = document.getElementById('startDateFilter').value, endDateVal = document.getElementById('endDateFilter').value;
     const startDate = startDateVal ? new Date(startDateVal) : null, endDate = endDateVal ? new Date(endDateVal) : null;
-    if(endDate) endDate.setHours(23, 59, 59, 999);
-    
-    const data = sheetData.filter(row => (bodyPart === 'all' || row.bodyPart === bodyPart) && (exercise === 'all' || row.exercise === exercise) &&
-        (!startDate || row.date >= startDate) && (!endDate || row.date <= endDate));
+    if (endDate) endDate.setHours(23, 59, 59, 999);
+    const data = sheetData.filter(row => row.user === currentUser && (bodyPart === 'all' || row.bodyPart === bodyPart) && (exercise === 'all' || row.exercise === exercise) && (!startDate || row.date >= startDate) && (!endDate || row.date <= endDate));
     const container = document.getElementById('dashboardContent');
-    if (data.length === 0) { container.innerHTML = `<div class="dashboard-card"><p>No data for this selection.</p></div>`; return; }
-
+    if (data.length === 0) { container.innerHTML = `<div class="dashboard-card"><p>No data for this selection. Try a different filter or sync your workouts.</p></div>`; return; }
     const e1RM = (w, r) => r > 0 ? w * (1 + r / 30) : 0;
     data.forEach(row => row.e1RM = e1RM(row.weight, row.reps));
     const bestSet = data.reduce((max, row) => row.e1RM > max.e1RM ? row : max, { e1RM: 0 });
-    const progressData = data.filter(row => row.exercise === bestSet.exercise).sort((a,b) => a.date - b.date);
+    const progressData = data.filter(row => row.exercise === bestSet.exercise).sort((a, b) => a.date - b.date);
     const strengthChange = progressData.length > 1 ? ((progressData[progressData.length - 1].e1RM - progressData[0].e1RM) / progressData[0].e1RM * 100).toFixed(1) : 0;
-
-    container.innerHTML = `
-        <div class="dashboard-card"><h3>Best Lift</h3><p style="font-size: 2rem; font-weight: 700;">${bestSet.weight} kg x ${bestSet.reps} reps</p><small>${bestSet.exercise}</small></div>
-        <div class="dashboard-card"><h3>Est. 1-Rep Max</h3><p style="font-size: 2rem; font-weight: 700;">${bestSet.e1RM.toFixed(1)} kg</p><small>Your estimated strength score.</small></div>
-        <div class="dashboard-card tip-card"><h3><i class="fas fa-lightbulb"></i>AI Tip</h3><p>${generateAITip(strengthChange, bestSet.reps)}</p></div>
-        <div class="dashboard-card" style="grid-column: 1 / -1;"><div class="chart-container"><canvas id="progressChart"></canvas></div></div>`;
+    container.innerHTML = `<div class="dashboard-card"><h3>Best Lift</h3><p style="font-size: 2rem; font-weight: 700;">${bestSet.weight} kg x ${bestSet.reps} reps</p><small>${bestSet.exercise}</small></div><div class="dashboard-card"><h3>Est. 1-Rep Max</h3><p style="font-size: 2rem; font-weight: 700;">${bestSet.e1RM.toFixed(1)} kg</p><small>Your estimated strength score.</small></div><div class="dashboard-card tip-card"><h3><i class="fas fa-lightbulb"></i>Quick Tip</h3><p>${generateAITip(strengthChange, bestSet.reps)}</p></div><div id="aiAnalysisCard" class="dashboard-card" style="grid-column: 1 / -1; display: none;"><h3>AI Analysis</h3><div id="aiAnalysisContent"></div></div><div class="dashboard-card" style="grid-column: 1 / -1;"><div class="chart-container"><canvas id="progressChart"></canvas></div></div>`;
     renderProgressChart(progressData, 'progressChart');
 }
 function renderProgressChart(data, canvasId) {
     if (chartInstances[canvasId]) chartInstances[canvasId].destroy();
-    const ctx = document.getElementById(canvasId)?.getContext('2d');
-    if (!ctx) return;
-    chartInstances[canvasId] = new Chart(ctx, { type: 'line',
-        data: { labels: data.map(d => d.date.toLocaleDateString()), datasets: [{ label: 'Estimated 1RM (kg)', data: data.map(d => d.e1RM.toFixed(1)), borderColor: 'var(--primary-color)', tension: 0.1, fill: true, }] },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
+    const ctx = document.getElementById(canvasId)?.getContext('2d'); if (!ctx) return;
+    chartInstances[canvasId] = new Chart(ctx, { type: 'line', data: { labels: data.map(d => d.date.toLocaleDateString()), datasets: [{ label: 'Estimated 1RM (kg)', data: data.map(d => d.e1RM.toFixed(1)), borderColor: 'var(--primary-color)', tension: 0.1, fill: true, }] }, options: { responsive: true, maintainAspectRatio: false } });
 }
 function generateAITip(change, reps) {
     if (change > 5) return `Incredible progress! Your strength has increased by ${change}%. Consider a slight weight increase to continue this trend.`;
@@ -215,45 +173,46 @@ function generateAITip(change, reps) {
     if (reps > 15) return "Great endurance! To build more top-end strength, try increasing the weight so your reps fall in the 6-10 range.";
     return "Consistency is key. You're laying the foundation for future progress. Keep showing up!";
 }
-
-// --- AI CHATBOT (SECURE VERSION) ---
+// --- AI FEATURES ---
+async function analyzeProgressWithAI() {
+    const exercise = document.getElementById('exerciseFilter').value;
+    if (exercise === 'all') { showNotification("Please select a specific exercise to analyze.", "info"); return; }
+    const analysisCard = document.getElementById('aiAnalysisCard');
+    const analysisContent = document.getElementById('aiAnalysisContent');
+    analysisCard.style.display = 'block'; analysisContent.innerHTML = '<p>AI is analyzing your progress...</p>';
+    const data = sheetData.filter(row => row.user === currentUser && row.exercise === exercise).sort((a, b) => a.date - b.date);
+    const summary = `User: ${currentUser}. Exercise: ${exercise}. Performance History (last 5 sessions): ${data.slice(-5).map(d => `${d.date.toLocaleDateString()}: ${d.weight}kg x ${d.reps}reps`).join(', ')}`;
+    try {
+        const response = await fetch('/.netlify/functions/analyze-progress', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dataSummary: summary }) });
+        if (!response.ok) throw new Error('AI analysis failed.');
+        const { analysis } = await response.json();
+        analysisContent.innerHTML = analysis.replace(/\n/g, '<br>');
+    } catch (error) { analysisContent.innerHTML = '<p>Sorry, the AI analysis could not be completed at this time.</p>'; }
+}
 function setupAIChatListeners() {
-    const chatWidget = document.getElementById('aiChatWidget');
-    document.getElementById('chatToggleBtn').addEventListener('click', () => chatWidget.classList.toggle('active'));
-    document.getElementById('closeChatBtn').addEventListener('click', () => chatWidget.classList.remove('active'));
+    const chatModal = document.getElementById('aiChatModal');
+    document.getElementById('chatToggleBtn').addEventListener('click', () => chatModal.classList.add('active'));
+    document.getElementById('closeChatBtn').addEventListener('click', () => chatModal.classList.remove('active'));
     document.getElementById('sendChatBtn').addEventListener('click', sendChatMessage);
     document.getElementById('chatInput').addEventListener('keypress', e => { if (e.key === 'Enter') sendChatMessage(); });
 }
 function addChatMessage(message, sender) {
-    const container = document.getElementById('chatMessages');
-    const msgDiv = document.createElement('div'); msgDiv.className = `${sender}-message`;
-    msgDiv.innerHTML = `<p>${message}</p>`; container.appendChild(msgDiv);
-    container.scrollTop = container.scrollHeight;
+    const container = document.getElementById('chatMessages'); const msgDiv = document.createElement('div'); msgDiv.className = `${sender}-message`;
+    msgDiv.innerHTML = `<p>${message}</p>`; container.appendChild(msgDiv); container.scrollTop = container.scrollHeight;
 }
 async function sendChatMessage() {
     const input = document.getElementById('chatInput'), userMessage = input.value.trim();
     if (!userMessage) return;
     addChatMessage(userMessage, 'user'); input.value = ''; addChatMessage("<i>AI is thinking...</i>", 'ai');
     try {
-        const response = await fetch('/.netlify/functions/ask-ai', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userMessage }),
-        });
+        const response = await fetch('/.netlify/functions/ask-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userMessage }), });
         if (!response.ok) throw new Error(`Function Error: ${response.statusText}`);
-        const data = await response.json();
-        document.querySelector('.ai-message:last-child').remove();
-        addChatMessage(data.message, 'ai');
-    } catch (error) {
-        console.error('AI Chat Error:', error);
-        document.querySelector('.ai-message:last-child').remove();
-        addChatMessage("Sorry, I'm having trouble connecting right now.", 'ai');
-    }
+        const data = await response.json(); document.querySelector('.ai-message:last-child').remove(); addChatMessage(data.message, 'ai');
+    } catch (error) { console.error('AI Chat Error:', error); document.querySelector('.ai-message:last-child').remove(); addChatMessage("Sorry, I'm having trouble connecting right now.", 'ai'); }
 }
 function showNotification(message, type = 'info') {
-    const el = document.createElement('div');
-    el.className = `notification ${type}`; el.textContent = message;
-    el.style.cssText = `position: fixed; bottom: 20px; right: 20px; background-color: ${type === 'error' ? 'var(--danger-color)' : type === 'success' ? '#0F9D58' : 'var(--primary-color)'};
-        color: white; padding: 12px 24px; border-radius: 8px; box-shadow: var(--shadow); z-index: 1001; opacity: 0;
-        transition: all 0.3s; transform: translateY(10px);`;
+    const el = document.createElement('div'); el.className = `notification ${type}`; el.textContent = message;
+    el.style.cssText = `position: fixed; bottom: 20px; right: 20px; background-color: ${type === 'error' ? 'var(--danger-color)' : type === 'success' ? '#0F9D58' : 'var(--primary-color)'}; color: white; padding: 12px 24px; border-radius: 8px; box-shadow: var(--shadow); z-index: 1001; opacity: 0; transition: all 0.3s; transform: translateY(10px);`;
     document.body.appendChild(el);
     setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; }, 10);
     setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);

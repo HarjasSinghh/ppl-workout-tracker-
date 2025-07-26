@@ -251,7 +251,9 @@ function loadWorkoutUI() {
     container.appendChild(item);
   });
 
-  document.getElementById('workoutNotes').value = progress.notes || '';
+  const notesEl = document.getElementById('workoutNotes');
+  notesEl.value = progress.notes || '';
+  notesEl.addEventListener('input', saveNotes);
 }
 
 function handleExerciseChange(exIndex, newExerciseName) {
@@ -558,8 +560,14 @@ function setupEventListeners() {
   document.getElementById('analyzeProgressBtn')?.addEventListener('click', analyzeProgressWithAI);
   document.getElementById('clearSheetBtn')?.addEventListener('click', clearGoogleSheet);
   document.querySelectorAll('#dateRangeFilter, #bodyPartFilter, #exerciseFilter').forEach(f => f.addEventListener('change', renderDashboard));
-  document.getElementById('chatToggleBtn')?.addEventListener('click', () => document.getElementById('aiChatModal')?.classList.add('active'));
-  document.getElementById('closeChatBtn')?.addEventListener('click', () => document.getElementById('aiChatModal')?.classList.remove('active'));
+  document.getElementById('chatToggleBtn')?.addEventListener('click', () => {
+    // NEW: Clear history when opening the chat manually, but not for analysis
+    if (!document.getElementById('aiChatModal').classList.contains('active')) {
+      chatHistory = []; 
+    }
+    document.getElementById('aiChatModal').classList.add('active');
+  });
+  document.getElementById('closeChatBtn')?.addEventListener('click', () => document.getElementById('aiChatModal').classList.remove('active'));
   document.getElementById('sendChatBtn')?.addEventListener('click', sendChatMessage);
   document.getElementById('chatInput')?.addEventListener('keypress', e => { if (e.key === 'Enter') sendChatMessage(); });
   document.getElementById('workoutNotes')?.addEventListener('input', saveNotes);

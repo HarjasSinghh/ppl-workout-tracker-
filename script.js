@@ -2,7 +2,7 @@
 
 /**
  * ===================================================================
- * FitTrack Pro - Main Application Script v7.0 (Final UI & Logic Fixes)
+ * FitTrack Pro - Main Application Script v7.1 (Final Logic Fix)
  * ===================================================================
  */
 
@@ -70,9 +70,6 @@ function parseSheetDate(d) { const dt = new Date(d); return isNaN(dt) ? new Date
 function saveWorkoutProgress() { localStorage.setItem('workoutProgress', JSON.stringify(workoutProgress)); if (gapi.client?.getToken()) updateAuthorizationUI(true); }
 function loadWorkoutProgress() { try { workoutProgress = JSON.parse(localStorage.getItem('workoutProgress')) || {}; } catch { workoutProgress = {}; } }
 
-/**
- * BUG FIX: This function now reliably checks for the internal 'completed' flag.
- */
 function checkPendingWorkoutData() {
   return Object.values(workoutProgress).some(day =>
     day?.sets && Object.values(day.sets).some(ex =>
@@ -90,7 +87,10 @@ function renderHome() {
     card.className = 'day-card';
     card.dataset.day = day;
     card.innerHTML = `<i class="fas fa-dumbbell"></i><h3>${workout.name}</h3>`;
-    card.addEventListener('click', () => { currentDay = day; showPage('workoutScreen'); });
+    card.addEventListener('click', () => { 
+      currentDay = day; 
+      showPage('workoutScreen'); 
+    });
     grid.appendChild(card);
   });
 }
@@ -162,10 +162,6 @@ function handleExerciseChange(exIndex, newExerciseName) {
   saveWorkoutProgress();
 }
 
-/**
- * BUG FIX: This function now reliably marks a set as 'completed' internally
- * as soon as any data is entered, ensuring the sync button works correctly.
- */
 function handleSetChange(exIndex, setIndex, inputName, inputValue) {
   if (!workoutProgress[currentDay]) workoutProgress[currentDay] = { date: new Date().toISOString().slice(0, 10), sets: {}, notes: '' };
   const sets = workoutProgress[currentDay].sets;
@@ -175,7 +171,7 @@ function handleSetChange(exIndex, setIndex, inputName, inputValue) {
   sets[exIndex][setIndex][inputName] = inputValue;
   
   const currentSet = sets[exIndex][setIndex];
-  if (currentSet.weight > 0 || currentSet.reps > 0) {
+  if (Number(currentSet.weight) > 0 || Number(currentSet.reps) > 0) {
     currentSet.completed = true;
   } else {
     delete currentSet.completed; 
@@ -240,12 +236,9 @@ function populateBodyPartFilter() {
   const bodyParts = [...new Set(sheetData.filter(r => r.user === currentUser).map(r => r.bodyPart))].filter(Boolean);
   filter.innerHTML = '<option value="all">All Body Parts</option>';
   bodyParts.forEach(bp => { filter.innerHTML += `<option value="${bp}">${bp}</option>`; });
-  populateExerciseFilter(); // Call this to set initial state of exercise filter
+  populateExerciseFilter();
 }
 
-/**
- * BUG FIX: This function now correctly enables/disables the exercise filter.
- */
 function populateExerciseFilter() {
   const bodyFilter = document.getElementById('bodyPartFilter');
   const exFilter = document.getElementById('exerciseFilter');
@@ -256,9 +249,8 @@ function populateExerciseFilter() {
   exFilter.innerHTML = '<option value="all">All Exercises</option>';
   exercises.forEach(ex => { exFilter.innerHTML += `<option value="${ex}">${ex}</option>`; });
   
-  // Only disable if no body part is selected.
   exFilter.disabled = (bodyPart === 'all');
-  renderDashboard(); // Always re-render dashboard after filters change
+  renderDashboard();
 }
 
 function getFilteredDashboardData() {
@@ -268,14 +260,35 @@ function getFilteredDashboardData() {
   return sheetData.filter(row => row.user === currentUser && (dateRange === 'all' || (new Date() - row.date) / 86400000 <= parseInt(dateRange)) && (bodyPart === 'all' || row.bodyPart === bodyPart) && (exercise === 'all' || row.exercise === exercise));
 }
 
-function renderDashboard() { /* ... Function is stable, no changes needed ... */ const content=document.getElementById('dashboardContent');const filteredData=getFilteredDashboardData();if(filteredData.length===0){content.innerHTML=`<div class="dashboard-card"><p>No data found for this selection.</p></div>`;if(chartInstance){chartInstance.destroy();chartInstance=null}return}const e1RM=(w,r)=>(r>0?w*(1+r/30):0);filteredData.forEach(row=>row.e1RM=e1RM(row.weight,row.reps));const bestSet=filteredData.reduce((max,row)=>(row.e1RM>max.e1RM?row:max),{e1RM:0});content.innerHTML=`<div class="dashboard-card"><h3>Best Lift</h3><p style="font-size:2rem;font-weight:700">${bestSet.weight}kg x ${bestSet.reps} reps</p><small>${bestSet.exercise}</small></div><div class="dashboard-card"><h3>Est. 1-Rep Max</h3><p style="font-size:2rem;font-weight:700">${bestSet.e1RM.toFixed(1)}kg</p></div><div class="dashboard-card"style="grid-column:1/-1"><div class="chart-container"><canvas id="progressChart"></canvas></div></div>`;renderProgressChart(filteredData,'progressChart',document.getElementById('exerciseFilter').value!=='all'?`1RM for ${document.getElementById('exerciseFilter').value}`:'Est. 1RM (kg)')}
+function renderDashboard() {
+  const content=document.getElementById('dashboardContent');const filteredData=getFilteredDashboardData();if(filteredData.length===0){content.innerHTML=`<div class="dashboard-card"><p>No data found for this selection.</p></div>`;if(chartInstance){chartInstance.destroy();chartInstance=null}return}const e1RM=(w,r)=>(r>0?w*(1+r/30):0);filteredData.forEach(row=>row.e1RM=e1RM(row.weight,row.reps));const bestSet=filteredData.reduce((max,row)=>(row.e1RM>max.e1RM?row:max),{e1RM:0});content.innerHTML=`<div class="dashboard-card"><h3>Best Lift</h3><p style="font-size:2rem;font-weight:700">${bestSet.weight}kg x ${bestSet.reps} reps</p><small>${bestSet.exercise}</small></div><div class="dashboard-card"><h3>Est. 1-Rep Max</h3><p style="font-size:2rem;font-weight:700">${bestSet.e1RM.toFixed(1)}kg</p></div><div class="dashboard-card"style="grid-column:1/-1"><div class="chart-container"><canvas id="progressChart"></canvas></div></div>`;renderProgressChart(filteredData,'progressChart',document.getElementById('exerciseFilter').value!=='all'?`1RM for ${document.getElementById('exerciseFilter').value}`:'Est. 1RM (kg)')
+}
+
 function renderProgressChart(data,canvasId,label){if(chartInstance)chartInstance.destroy();const ctx=document.getElementById(canvasId)?.getContext('2d');if(ctx){chartInstance=new Chart(ctx,{type:'line',data:{labels:data.map(d=>d.date.toLocaleDateString('en-GB')),datasets:[{label:label,data:data.map(d=>d.e1RM.toFixed(1)),borderColor:'var(--primary-color)',tension:0.1,fill:true,backgroundColor:'rgba(11,87,208,0.1)'}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{ticks:{maxRotation:45,minRotation:30}},y:{beginAtZero:true}}}})}}
 
 // 7. USER MANAGEMENT & NAVIGATION
 function loadCurrentUser() { currentUser = localStorage.getItem('currentUser') || 'Harjas'; document.querySelectorAll('.user-card').forEach(c => c.classList.toggle('active', c.dataset.user === currentUser)); document.getElementById('workout-section-title').textContent = `Select Workout for ${currentUser}`; }
 function selectUser(user) { currentUser = user; localStorage.setItem('currentUser', user); loadCurrentUser(); if (document.getElementById('dashboardScreen').classList.contains('active')) fetchDashboardData(false); }
-function showPage(pageId) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); const pageEl = document.getElementById(pageId); if (pageEl) { pageEl.classList.add('active'); if(pageId !== 'workoutScreen') loadWorkoutProgress(); if (pageId === 'homeScreen') renderHome(); if (pageId === 'dashboardScreen' && gapi.client?.getToken()) fetchDashboardData(false); } document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('active', link.dataset.page === pageId)); }
-function syncOrFetchData(e) { if (e.currentTarget.id.includes('Dashboard')) fetchDashboardData(true); else syncWorkoutData(); }
+
+/**
+ * BUG FIX: This function now correctly calls the appropriate loader for each page.
+ */
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.dataset.page === pageId));
+  
+  const pageEl = document.getElementById(pageId);
+  if (pageEl) {
+    pageEl.classList.add('active');
+    // Load data for the activated page
+    if (pageId === 'workoutScreen') {
+      loadWorkoutUI();
+    } else if (pageId === 'dashboardScreen' && isApiReady && gapi.client?.getToken()) {
+      fetchDashboardData(false);
+    }
+  }
+}
+
 function resetCurrentWorkout() { if (confirm("Reset entries for this session? This won't affect synced data.") && workoutProgress[currentDay]) { delete workoutProgress[currentDay]; saveWorkoutProgress(); loadWorkoutUI(); showNotification("Workout session has been reset.", "info"); } }
 
 // 8. AI & EXTRA FEATURES (Stable, no changes)
@@ -295,7 +308,7 @@ function setupEventListeners() {
   document.getElementById('analyzeProgressBtn')?.addEventListener('click', analyzeProgressWithAI);
   document.getElementById('clearSheetBtn')?.addEventListener('click', clearGoogleSheet);
   document.getElementById('dateRangeFilter')?.addEventListener('change', renderDashboard);
-  document.getElementById('bodyPartFilter')?.addEventListener('change', populateExerciseFilter); // BUG FIX: Correct handler
+  document.getElementById('bodyPartFilter')?.addEventListener('change', populateExerciseFilter);
   document.getElementById('exerciseFilter')?.addEventListener('change', renderDashboard);
   document.getElementById('chatToggleBtn')?.addEventListener('click', () => { document.getElementById('aiChatModal').classList.add('active'); });
   document.getElementById('closeChatBtn')?.addEventListener('click', () => document.getElementById('aiChatModal').classList.remove('active'));
@@ -308,5 +321,5 @@ document.addEventListener('DOMContentLoaded', () => {
   loadCurrentUser();
   loadWorkoutProgress();
   setupEventListeners();
-  showPage('homeScreen'); // Start on home screen
+  showPage('homeScreen');
 });

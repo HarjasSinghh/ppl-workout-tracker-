@@ -277,3 +277,48 @@ body > .notification { opacity: 1; pointer-events: all; transform: translateX(-5
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance:textfield; }
+
+/* === WORKOUT NOTES SCROLL & VISIBILITY FIX === */
+.main-content {
+  padding-bottom: 210px !important;   /* Room for nav, floaters, and on-screen keyboard */
+  min-height: 0;
+  height: auto;
+}
+@media (max-width: 769px) {
+  .notes-section { margin-bottom: 116px; }
+  .main-content { padding-bottom: 200px !important; }
+  .sidebar { z-index: 1100; }
+  .floating-btn { z-index: 1150; }
+  .notes-section { z-index: 1080; }
+}
+
+/* === ARMS DAY CARD, LONG TEXT ADAPTATION === */
+.exercise-log-header,
+.set-inputs { display: flex; flex-wrap: wrap; gap: 10px; min-width: 0; }
+.exercise-log-header select,
+.exercise-log-header .exercise-select {
+  flex: 1 1 180px;
+  font-weight: 700;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  min-width: 0;
+}
+.set-select { flex: 0 0 95px; min-width: 95px; }
+.set-inputs input[type="number"] {
+  flex: 1 1 110px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Only for arms day or any superset: allow labels/selects to wrap elegantly */
+.exercise-log-item[data-ex-index] select,
+.exercise-log-item[data-ex-index] .exercise-select {
+  white-space: normal;
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .exercise-log-header, .set-inputs { flex-direction: column; gap: 9px;}
+}

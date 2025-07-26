@@ -299,7 +299,23 @@ let sheetData = [];
 let chartInstances = {};
 let isApiReady = false;
 
-// === 2. GOOGLE API INITIALIZATION & AUTH CALLBACKS (GLOBAL SCOPE) ===
+// Utility: hasPendingData must be defined BEFORE usage!
+function hasPendingData() {
+  for (const day of Object.values(workoutProgress)) {
+    if (day.sets) {
+      for (const exercise of Object.values(day.sets)) {
+        for (const set of Object.values(exercise)) {
+          if (typeof set === 'object' && set.completed) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
+// === 2. GOOGLE API INITIALIZATION & AUTH CALLBACKS (GLOBAL) ===
 function gapiLoaded() {
   gapi.load('client', async () => {
     try {
@@ -313,6 +329,7 @@ function gapiLoaded() {
         'Critical Error: Could not initialize Google Sheets API.',
         'error'
       );
+      console.error('GAPI init error:', e);
     }
   });
 }
@@ -330,6 +347,7 @@ function gisLoaded() {
       'Critical Error: Could not initialize Google Sign-In.',
       'error'
     );
+    console.error('GIS init error:', e);
   }
 }
 function checkApiReady() {
@@ -342,7 +360,10 @@ function checkApiReady() {
 }
 function handleAuthClick() {
   if (!isApiReady) {
-    showNotification('Google API is not ready. Please wait and try again.', 'error');
+    showNotification(
+      'Google API is not ready yet. Please wait a moment and try again.',
+      'error'
+    );
     return;
   }
   tokenClient.requestAccessToken({ prompt: 'consent' });
@@ -351,6 +372,7 @@ function handleAuthResponse(resp) {
   if (resp.error) {
     showNotification('Authorization failed. Please try again.', 'error');
     updateSigninStatus(false);
+    console.error('Auth error:', resp);
     return;
   }
   updateSigninStatus(true);
@@ -384,7 +406,7 @@ function updateAuthorizeButtons(enabled, text) {
   });
 }
 
-
+// === 3. SHOW NOTIFICATIONS ===
 function showNotification(message, type = 'info') {
   const el = document.createElement('div');
   el.className = `notification ${type}`;
@@ -400,8 +422,7 @@ function showNotification(message, type = 'info') {
   }, 4000);
 }
 
-
-// === 3. MAIN APP LOGIC (RUNS AFTER DOM IS READY) ===
+// === 4. MAIN APP LOGIC (after DOM ready) ===
 document.addEventListener('DOMContentLoaded', () => {
   const elements = {
     navLinks: document.querySelectorAll('.nav-link'),
@@ -479,6 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --- PAGE NAVIGATION ---
   function showPage(pageId) {
     elements.pages.forEach((p) => p.classList.remove('active'));
     const page = document.getElementById(pageId);
@@ -486,12 +508,12 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.navLinks.forEach((link) =>
       link.classList.toggle('active', link.dataset.page === pageId)
     );
-
     if (pageId === 'dashboardScreen' && isApiReady && gapi.client?.getToken()) {
       fetchDashboardData(false);
     }
   }
 
+  // --- HOME SCREEN RENDER ---
   function renderHome() {
     elements.workoutGrid.innerHTML = '';
     Object.entries(workoutData).forEach(([day, workout]) => {
@@ -510,6 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadWorkoutUI();
   }
 
+  // --- WORKOUT UI ---
   function loadWorkoutUI() {
     const workout = workoutData[currentDay];
     if (!workout) return;
@@ -593,7 +616,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!workoutProgress[currentDay].sets[ex]) {
       workoutProgress[currentDay].sets[ex] = {};
     }
-
     const isCompleted = row.querySelector('.set-checkbox').checked;
     workoutProgress[currentDay].sets[ex][set] = {
       completed: isCompleted,
@@ -638,21 +660,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function loadWorkoutProgress() {
     workoutProgress = JSON.parse(localStorage.getItem('workoutProgress') || '{}');
-  }
-
-  function hasPendingData() {
-    for (const day of Object.values(workoutProgress)) {
-      if (day.sets) {
-        for (const exercise of Object.values(day.sets)) {
-          for (const set of Object.values(exercise)) {
-            if (typeof set === 'object' && set.completed) {
-              return true;
-            }
-          }
-        }
-      }
-    }
-    return false;
   }
 
   function syncOrFetchData(event) {
@@ -882,6 +889,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --- CLEAR DATA ---
   async function clearGoogleSheet() {
     if (!gapi.client?.getToken())
       return showNotification('Please authorize first.', 'error');
@@ -907,6 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --- USER MANAGEMENT ---
   function loadCurrentUser() {
     currentUser = localStorage.getItem('currentUser') || 'Harjas';
     elements.userCards.forEach((c) =>
@@ -928,6 +937,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --- AI ANALYSIS & CHAT PLACEHOLDERS ---
   async function analyzeProgressWithAI() {
     showNotification('AI Analysis coming soon!', 'info');
   }
@@ -964,7 +974,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
   }
 
-  // Init call
+  // --- INITIALIZATION ---
   setupEventListeners();
   loadCurrentUser();
   loadWorkoutProgress();

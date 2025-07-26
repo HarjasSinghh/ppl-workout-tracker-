@@ -1,50 +1,47 @@
-// This is the new, improved netlify/functions/ask-ai.js
+// This is the new, updated netlify/functions/ask-ai.js for Google Gemini
 exports.handler = async function(event) {
-    const { userMessage } = JSON.parse(event.body);
-    const openAIApiKey = process.env.OPENAI_API_KEY;
-
-    // First, check if the API key is even available
-    if (!openAIApiKey) {
-        console.error("CRITICAL: OPENAI_API_KEY environment variable is not set!");
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: "Server configuration error: API key not found." })
-        };
+    if (event.httpMethod !== 'POST') {
+        return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
-    try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${openAIApiKey}`,
-            },
-            body: JSON.stringify({
-                model: 'gpt-3.5-turbo',
-                messages: [
-                    { role: 'system', content: 'You are an expert fitness coach. Provide concise, helpful advice.' },
-                    { role: 'user', content: userMessage }
-                ],
-            }),
-        });
-        
-        const data = await response.json();
+    const { userMessage } = JSON.parse(event.body);
+    // We will now use the Gemini API key
+    const geminiApiKey = process.env.GEMINI_API_KEY;
 
-        // Check for errors returned by OpenAI itself
-        if (data.error) {
-            console.error("OpenAI API returned an error:", data.error.message);
-            return {
-                statusCode: 400, // Or whatever status code OpenAI gives
-                body: JSON.stringify({ error: data.error.message })
-            };
+    if (!geminiApiKey) {
+        console.error("CRITICAL: GEMINI_API_KEY environment variable is not set!");
+        return { statusCode: 500, body: JSON.stringify({ error: "Server configuration error: API key not found." }) };
+    }
+
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${geminiApiKey}`;
+
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{
+                        text: `You are an expert fitness coach. Provide concise, helpful advice on workouts and nutrition. User's question: "${userMessage}"`
+                    }]
+                }]
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("Google AI API returned an error:", errorData.error.message);
+            return { statusCode: response.status, body: JSON.stringify({ error: errorData.error.message }) };
         }
+
+        const data = await response.json();
+        const aiMessage = data.candidates[0].content.parts[0].text;
 
         return {
             statusCode: 200,
-            body: JSON.stringify({ message: data.choices[0].message.content }),
+            body: JSON.stringify({ message: aiMessage }),
         };
     } catch (error) {
-        // This will log the detailed network error or other issues
         console.error('Function execution error:', error);
         return { 
             statusCode: 500, 

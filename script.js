@@ -1,5 +1,5 @@
 // ==========================================
-// CONFIGURATION
+// CONFIGURATION & STATE
 // ==========================================
 const GOOGLE_CONFIG = {
     CLIENT_ID: '1040913543341-0vj52ims83dkcudpvh6rdtvrvr5da5nn.apps.googleusercontent.com',
@@ -15,37 +15,21 @@ const workoutData = {
     6: { name: "Arms Day", bodyPart: "Arms", exercises: [{ name: "Cable EZ Bar Curls", sets: 4 }, { name: "Tricep Pushdowns", sets: 4 }, { name: "Preacher Curls", sets: 3 }, { name: "Wrist Curls", sets: 3 }, { name: "Farmer Walks", sets: 3 }] }
 };
 let currentUser = 'Harjas', currentDay = 1, workoutProgress = {}, gapiInited = false, gisInited = false, tokenClient, sheetData = [], chartInstances = {};
+
 // --- INITIALIZATION & CORE APP LOGIC ---
 window.gapiLoaded = () => gapi.load('client', initializeGapiClient);
 window.gisLoaded = () => {
     tokenClient = google.accounts.oauth2.initTokenClient({ client_id: GOOGLE_CONFIG.CLIENT_ID, scope: GOOGLE_CONFIG.SCOPES, callback: handleAuthResponse });
     gisInited = true; checkAuthButton();
 };
-async function analyzeProgressWithAI() {
-    const exercise = document.getElementById('exerciseFilter').value;
-    if (exercise === 'all') { showNotification("Please select a specific exercise to analyze.", "info"); return; }
-    const analysisCard = document.getElementById('aiAnalysisCard');
-    const analysisContent = document.getElementById('aiAnalysisContent');
-    analysisCard.style.display = 'block'; analysisContent.innerHTML = '<p>AI is analyzing your progress...</p>';
-
-    const data = sheetData.filter(row => row.user === currentUser && row.exercise === exercise).sort((a, b) => a.date - b.date);
-    const summary = `User: ${currentUser}. Exercise: ${exercise}. Performance History (last 5 sessions): ${data.slice(-5).map(d => `${d.date.toLocaleDateString()}: ${d.weight}kg x ${d.reps}reps`).join(', ')}`;
-    
-    try {
-        // This now calls the unified function with the 'analysis' type
-        const response = await fetch('/.netlify/functions/ask-ai', { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify({ type: 'analysis', payload: summary }) 
-        });
-
-        if (!response.ok) throw new Error('AI analysis failed.');
-        const { message } = await response.json();
-        analysisContent.innerHTML = message.replace(/\n/g, '<br>');
-    } catch (error) {
-        analysisContent.innerHTML = '<p>Sorry, the AI analysis could not be completed at this time.</p>';
-    }
+async function initializeGapiClient() {
+    await gapi.client.init({ discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"] });
+    gapiInited = true; checkAuthButton();
 }
+document.addEventListener('DOMContentLoaded', () => {
+    loadCurrentUser(); workoutProgress = JSON.parse(localStorage.getItem('workoutProgress')) || {};
+    setupEventListeners(); showPage('homeScreen');
+});
 function setupEventListeners() {
     document.querySelectorAll('.nav-link').forEach(link => link.addEventListener('click', e => { e.preventDefault(); showPage(link.dataset.page); }));
     document.querySelectorAll('.day-card').forEach(card => card.addEventListener('click', () => startWorkout(card.dataset.day)));
@@ -194,16 +178,15 @@ function generateAITip(change, reps) {
 async function analyzeProgressWithAI() {
     const exercise = document.getElementById('exerciseFilter').value;
     if (exercise === 'all') { showNotification("Please select a specific exercise to analyze.", "info"); return; }
-    const analysisCard = document.getElementById('aiAnalysisCard');
-    const analysisContent = document.getElementById('aiAnalysisContent');
+    const analysisCard = document.getElementById('aiAnalysisCard'); const analysisContent = document.getElementById('aiAnalysisContent');
     analysisCard.style.display = 'block'; analysisContent.innerHTML = '<p>AI is analyzing your progress...</p>';
     const data = sheetData.filter(row => row.user === currentUser && row.exercise === exercise).sort((a, b) => a.date - b.date);
     const summary = `User: ${currentUser}. Exercise: ${exercise}. Performance History (last 5 sessions): ${data.slice(-5).map(d => `${d.date.toLocaleDateString()}: ${d.weight}kg x ${d.reps}reps`).join(', ')}`;
     try {
-        const response = await fetch('/.netlify/functions/analyze-progress', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dataSummary: summary }) });
+        const response = await fetch('/.netlify/functions/ask-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'analysis', payload: summary }) });
         if (!response.ok) throw new Error('AI analysis failed.');
-        const { analysis } = await response.json();
-        analysisContent.innerHTML = analysis.replace(/\n/g, '<br>');
+        const { message } = await response.json();
+        analysisContent.innerHTML = message.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     } catch (error) { analysisContent.innerHTML = '<p>Sorry, the AI analysis could not be completed at this time.</p>'; }
 }
 function setupAIChatListeners() {
@@ -222,21 +205,10 @@ async function sendChatMessage() {
     if (!userMessage) return;
     addChatMessage(userMessage, 'user'); input.value = ''; addChatMessage("<i>AI is thinking...</i>", 'ai');
     try {
-        // This now calls the unified function with the 'chat' type
-        const response = await fetch('/.netlify/functions/ask-ai', { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify({ type: 'chat', payload: userMessage }), 
-        });
+        const response = await fetch('/.netlify/functions/ask-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'chat', payload: userMessage }), });
         if (!response.ok) throw new Error(`Function Error: ${response.statusText}`);
-        const data = await response.json();
-        document.querySelector('.ai-message:last-child').remove();
-        addChatMessage(data.message, 'ai');
-    } catch (error) {
-        console.error('AI Chat Error:', error);
-        document.querySelector('.ai-message:last-child').remove();
-        addChatMessage("Sorry, I'm having trouble connecting right now.", 'ai');
-    }
+        const data = await response.json(); document.querySelector('.ai-message:last-child').remove(); addChatMessage(data.message, 'ai');
+    } catch (error) { console.error('AI Chat Error:', error); document.querySelector('.ai-message:last-child').remove(); addChatMessage("Sorry, I'm having trouble connecting right now.", 'ai'); }
 }
 function showNotification(message, type = 'info') {
     const el = document.createElement('div'); el.className = `notification ${type}`; el.textContent = message;

@@ -1,28 +1,28 @@
 /*
  * ===================================================================
- *  FitTrack Pro - "Focus" Design System v1.0
- *  A Modern, High-Contrast, and Minimalistic UI/UX Overhaul
+ *  FitTrack Pro - "Apex" Design System v1.1
+ *  A Light, Clean, and Professional UI/UX (with floating buttons)
  * ===================================================================
  */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  /* High-Contrast, Minimalistic Color Palette */
+  /* A Light, Clean, and Professional Color Palette */
   --primary-color: #007aff;
-  --background-color: #ffffff; /* Pure white background for stark contrast */
-  --surface-color: #1c1c1e; /* Deep charcoal for cards and surfaces */
-  --text-primary: #121212; /* Near-black for primary text on light backgrounds */
-  --text-on-dark: #ffffff; /* Pure white text for dark cards */
-  --text-secondary: #8a8a8e;
-  --border-color: #e5e5e5;
+  --background-color: #f7f8fa; /* A softer, professional off-white */
+  --surface-color: #ffffff;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --border-color: #e5e5e7; /* Subtle border for clean separation */
+  --input-bg-color: #f0f1f3;
   --danger-color: #ff3b30;
   --success-color: #34c759;
-
-  /* Modern & Clean Typography/Spacing */
+  
+  /* Modern Spacing, Shadows, and Typography */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --radius: 10px;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --radius: 12px;
   --transition: 0.2s ease-in-out;
 }
 
@@ -42,14 +42,14 @@ body {
 
 .app-shell { display: flex; height: 100%; }
 .main-content { flex-grow: 1; overflow-y: auto; }
-.page { display: none; padding: 24px; }
+.page { display: none; padding: 28px; }
 .page.active { display: block; animation: fadeIn 0.3s var(--transition); }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* --- Sidebar (Desktop) --- */
 .sidebar {
   width: 240px;
-  background-color: var(--background-color);
+  background-color: var(--surface-color);
   border-right: 1px solid var(--border-color);
   padding: 24px 16px;
   display: flex;
@@ -59,63 +59,103 @@ body {
 .logo { font-size: 2rem; font-weight: 700; color: var(--primary-color); padding: 0 8px; margin-bottom: 24px; }
 .nav-link { display: flex; align-items: center; gap: 16px; color: var(--text-secondary); text-decoration: none; padding: 12px; border-radius: var(--radius); transition: var(--transition); cursor: pointer; font-weight: 500; }
 .nav-link i { font-size: 1.25rem; width: 24px; text-align: center; }
-.nav-link.active, .nav-link:hover { color: var(--primary-color); background-color: #f5f5f5; }
+.nav-link.active, .nav-link:hover { color: var(--primary-color); background-color: var(--background-color); }
 
 /* --- Page Header & Controls --- */
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; gap: 16px; }
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; gap: 16px; flex-wrap: wrap; }
 .page-header h1 { font-size: 2rem; font-weight: 700; }
-.header-actions { display: flex; gap: 12px; }
+.header-actions { display: flex; align-items: center; gap: 12px; }
 
 /* --- Remodeled Buttons --- */
-button, select { font-family: var(--font-family); font-size: 1rem; border-radius: var(--radius); border: 1px solid var(--border-color); padding: 10px 16px; transition: var(--transition); cursor: pointer; background-color: #f5f5f7; }
+button, select, input { font-family: var(--font-family); font-size: 1rem; border-radius: var(--radius); border: 1px solid var(--border-color); padding: 10px 16px; transition: var(--transition); background-color: var(--surface-color); }
+button { cursor: pointer; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 .primary-btn { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
 .primary-btn:hover:not(:disabled) { opacity: 0.85; }
+.secondary-btn { background-color: var(--surface-color); }
+.secondary-btn:hover:not(:disabled) { background-color: #f9f9f9; }
 .icon-btn { background: none; border: none; font-size: 1.2rem; padding: 8px; color: var(--text-secondary); }
 
-/* --- High-Contrast Workout Cards --- */
+/* --- Light & Clean Workout Cards --- */
 .workout-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
-.day-card { background: var(--surface-color); color: var(--text-on-dark); padding: 24px; border-radius: var(--radius); cursor: pointer; text-align: center; transition: var(--transition); }
-.day-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.day-card { background: var(--surface-color); border: 1px solid var(--border-color); padding: 24px; border-radius: var(--radius); cursor: pointer; text-align: center; transition: var(--transition); }
+.day-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
 .day-card i { font-size: 1.75rem; margin-bottom: 12px; display: block; color: var(--primary-color); }
-.day-card h3 { font-size: 1.1rem; font-weight: 500; }
 
-/* --- High-Contrast Workout LOGGING --- */
+/* --- Light & Clean Workout LOGGING --- */
 .workout-log-container { display: flex; flex-direction: column; gap: 16px; }
-.exercise-log-item { background: var(--surface-color); color: var(--text-on-dark); padding: 20px; border-radius: var(--radius); }
+.exercise-log-item { background: var(--surface-color); border: 1px solid var(--border-color); padding: 20px; border-radius: var(--radius); }
 .exercise-log-header { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 16px; }
 .set-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-select, input { background-color: #3a3a3c; color: var(--text-on-dark); border: 1px solid #545458; }
-input:focus, select:focus { border-color: var(--primary-color); outline: none; }
-input { padding: 12px; text-align: center; }
+select, input { background-color: var(--input-bg-color); border-color: transparent; }
+input:focus, select:focus { border-color: var(--primary-color); background-color: var(--surface-color); box-shadow: 0 0 0 2px rgba(0,122,255,0.2); outline: none; }
 
 /* --- User Selection & Dashboard --- */
-.user-selector .user-card { background-color: #f5f5f7; border: 2px solid transparent; }
+.user-selector .user-card { border: 2px solid transparent; background-color: #ededed; }
 .user-selector .user-card.active { border-color: var(--primary-color); }
-.dashboard-controls { background-color: #f5f5f7; padding: 16px; border-radius: var(--radius); }
+.dashboard-controls { background-color: var(--surface-color); border: 1px solid var(--border-color); padding: 16px; border-radius: var(--radius); }
 .dashboard-grid { margin-top: 24px; }
+.dashboard-card { background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 20px; }
 
-/* --- **FIXED** Opaque Notifications --- */
+/*
+ * ==================================================
+ *  **FIXED** RESTORED FLOATING BUTTONS AND CHAT MODAL
+ * ==================================================
+ */
+.floating-btn {
+  position: fixed;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  border: none;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease-in-out;
+}
+.floating-btn.hidden { display: none; }
+.floating-btn:hover { transform: scale(1.05); }
+
+.chat-btn { right: 28px; bottom: 28px; background-color: var(--primary-color); }
+.sync-btn { right: 28px; bottom: 96px; background-color: var(--success-color); }
+
+.ai-chat-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 2000; display: flex; align-items: center; justify-content: center; opacity: 0; visibility: hidden; transition: var(--transition); }
+.ai-chat-modal.active { opacity: 1; visibility: visible; }
+.ai-chat-widget { width: 90%; max-width: 500px; height: 75vh; background: var(--surface-color); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; }
+.chat-header { padding: 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+.chat-messages { flex-grow: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.ai-message, .user-message { max-width: 85%; padding: 10px 14px; border-radius: 16px; line-height: 1.5; }
+.ai-message { background: var(--background-color); align-self: flex-start; border-bottom-left-radius: 4px; }
+.user-message { background: var(--primary-color); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+.chat-input-container { display: flex; gap: 8px; padding: 16px; border-top: 1px solid var(--border-color); }
+
+/* --- FIXED Opaque & Clear Notifications --- */
 .notification {
   position: fixed;
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  color: var(--text-on-dark);
+  color: #fff;
   padding: 14px 24px;
-  border-radius: var(--radius);
+  border-radius: 8px;
   box-shadow: var(--shadow);
   z-index: 3000;
   font-weight: 500;
   opacity: 0;
-  transition: all 0.4s ease;
-  text-align: center;
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  transform: translate(-50%, -20px);
 }
 .notification.info { background-color: var(--primary-color); }
 .notification.success { background-color: var(--success-color); }
 .notification.error { background-color: var(--danger-color); }
+body > .notification { opacity: 1; transform: translateX(-50%); }
 
-/* --- **Remodeled** Mobile-First Responsive Adjustments --- */
+/* --- FINAL Mobile-First Responsive Adjustments --- */
 @media (max-width: 768px) {
   .app-shell { flex-direction: column-reverse; }
   .sidebar {
@@ -128,7 +168,7 @@ input { padding: 12px; text-align: center; }
     border-top: 1px solid var(--border-color);
     position: sticky;
     bottom: 0;
-    background: #fff;
+    background: var(--surface-color);
     z-index: 100;
   }
   .logo { display: none; }
@@ -139,19 +179,23 @@ input { padding: 12px; text-align: center; }
   .page { padding: 16px; }
   .page-header h1 { font-size: 1.75rem; }
 
-  /* **FIXED** Buttons on Mobile */
+  /* FIXED Buttons on Mobile */
   .header-actions button {
-    padding: 8px; /* Make buttons smaller */
-    width: 44px; /* Ensure a good tap target size */
-    height: 44px;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
-  .header-actions button span { display: none; } /* Hide text on mobile */
-  .header-actions button i { margin-right: 0; }
-  #authorizeBtnHome::before, #authorizeBtnWorkout::before, #authorizeBtnDashboard::before {
-    font-family: "Font Awesome 6 Free";
-    font-weight: 900;
-    content: "\f1a0"; /* Google Icon */
-  }
-  #authorizeBtnHome span, #authorizeBtnWorkout span, #authorizeBtnDashboard span { display: none; }
-  #authorizeBtnHome i, #authorizeBtnWorkout i, #authorizeBtnDashboard i { display:none; }
+  .header-actions button[id^="authorizeBtn"] span,
+  .header-actions button[id^="syncBtn"] span { display: none; }
+  
+  #authorizeBtnHome i, #authorizeBtnWorkout i, #authorizeBtnDashboard i,
+  #syncBtnHome i, #syncBtnWorkout i, #syncBtnDashboard i { margin: 0; }
+
+  /* Reposition floating buttons to avoid the bottom nav bar */
+  .chat-btn { bottom: 80px; } /* 64px (nav) + 16px (gap) */
+  .sync-btn { bottom: 148px; } /* 80px (chat-btn pos) + 56px (btn height) + 12px (gap) */
 }

@@ -2,7 +2,7 @@
 
 /**
  * ===================================================================
- * FitTrack Pro - Main Application Script v7.1 (Final Logic Fix)
+ * FitTrack Pro - Main Application Script v7.2 (Home Screen Fix)
  * ===================================================================
  */
 
@@ -81,6 +81,7 @@ function checkPendingWorkoutData() {
 // 5. UI RENDERING & WORKOUT LOGIC
 function renderHome() {
   const grid = document.getElementById('workoutGrid');
+  if (!grid) return;
   grid.innerHTML = '';
   Object.entries(workoutData).forEach(([day, workout]) => {
     const card = document.createElement('div');
@@ -101,6 +102,7 @@ function loadWorkoutUI() {
   document.getElementById('currentWorkoutTitle').textContent = workout.name;
   
   const container = document.getElementById('exerciseListContainer');
+  if (!container) return;
   container.innerHTML = '';
 
   const progress = workoutProgress[currentDay] || { date: new Date().toISOString().slice(0, 10), sets: {}, notes: '' };
@@ -280,8 +282,11 @@ function showPage(pageId) {
   const pageEl = document.getElementById(pageId);
   if (pageEl) {
     pageEl.classList.add('active');
-    // Load data for the activated page
-    if (pageId === 'workoutScreen') {
+    
+    // Load data or render UI for the activated page
+    if (pageId === 'homeScreen') {
+      renderHome();
+    } else if (pageId === 'workoutScreen') {
       loadWorkoutUI();
     } else if (pageId === 'dashboardScreen' && isApiReady && gapi.client?.getToken()) {
       fetchDashboardData(false);
@@ -321,5 +326,5 @@ document.addEventListener('DOMContentLoaded', () => {
   loadCurrentUser();
   loadWorkoutProgress();
   setupEventListeners();
-  showPage('homeScreen');
+  showPage('homeScreen'); // Start on home screen
 });

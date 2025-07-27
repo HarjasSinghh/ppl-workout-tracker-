@@ -10,6 +10,16 @@
 window.gapiLoaded = gapiLoaded;
 window.gisLoaded = gisLoaded;
 
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(registration => {
+        console.log('Service Worker registered with scope:', registration.scope);
+      })
+      .catch(err => console.error('Service Worker registration failed:', err));
+  });
+}
+
 const GOOGLE_CONFIG = {
   CLIENT_ID: '1040913543341-0vj52ims83dkcudpvh6rdtvrvr5da5nn.apps.googleusercontent.com',
   SPREADSHEET_ID: '15O-z40Jsy2PFs0XaXle07g_hJuwBCgpEi399TC9Yaic',

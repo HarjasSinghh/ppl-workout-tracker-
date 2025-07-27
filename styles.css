@@ -651,3 +651,44 @@ input[type="number"] { -moz-appearance: textfield; }
 
   text-align: center;
 }
+
+/* === Center Exercise Title and Set Label Text === */
+.exercise-log-header {
+  width: 100%;
+  display: flex;
+  flex-direction: column;    /* stack labels vertically */
+  align-items: center;       /* center horizontally */
+  justify-content: center;
+  text-align: center;        /* center text inside children */
+  gap: 4px;
+  margin-bottom: 12px;       /* Adjust spacing below header */
+}
+
+.exercise-title,
+.set-label {
+  width: 100%;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  text-align: center;
+  margin: 0;
+  padding: 0;
+}
+
+/* Center the input rows with consistent spacing */
+.set-inputs {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap; /* allow wrapping on very small screens */
+}
+
+/* Align each direct child of header & set-inputs centered vertically */
+.exercise-log-header > *,
+.set-inputs > * {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

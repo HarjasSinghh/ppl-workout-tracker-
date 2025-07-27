@@ -286,3 +286,79 @@ input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; }
 :focus { outline-color: var(--primary-color); }
+
+/* ========== UNIFORM AND COMPACT: SELECTS & DROPDOWNS ========== */
+.exercise-log-header select,
+.exercise-log-header .exercise-select,
+.set-select {
+  height: 36px !important;           /* Compact height */
+  min-height: 36px !important;
+  max-height: 36px !important;
+  padding: 0 11px !important;        /* Tight horizontal padding */
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  box-sizing: border-box !important;
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 1.2 !important;
+  margin: 0 !important;
+  background: var(--input-bg-color) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.set-inputs input[type="number"] {
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  padding: 0 7px !important;
+  font-size: 1rem !important;
+  font-weight: 500;
+  border-radius: 8px;
+  box-sizing: border-box;
+  text-align: center;
+  margin: 0 !important;
+  background: var(--input-bg-color);
+  border: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.set-inputs,
+.exercise-log-header {
+  align-items: center !important;    /* Tune vertical alignment */
+  gap: 8px !important;
+}
+
+@media (max-width: 600px) {
+  .exercise-log-header select,
+  .exercise-log-header .exercise-select,
+  .set-select,
+  .set-inputs input[type="number"] {
+    font-size: 0.96rem !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    padding: 0 7px !important;
+  }
+}
+
+/* Remove any browser-specific outline bloat */
+.exercise-log-header select:focus,
+.set-select:focus,
+.set-inputs input[type="number"]:focus {
+  outline: 2px solid var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+/* Remove all min-widths and max-widths that could force selects "chunky" */
+.exercise-log-header select,
+.exercise-log-header .exercise-select {
+  min-width: 0 !important;
+  max-width: 180px !important;
+  width: auto !important;
+}
+.set-select {
+  min-width: 60px !important;
+  max-width: 110px !important;
+  width: 70px !important;
+}

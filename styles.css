@@ -619,3 +619,9 @@ input[type="number"] { -moz-appearance: textfield; }
   }
 }
 
+/* ===== Center-align exercise and set selection rows ===== */
+.exercise-log-header,
+.set-inputs {
+  justify-content: center !important;    /* NEW: Center child elements horizontally */
+  text-align: center;
+}

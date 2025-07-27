@@ -623,5 +623,31 @@ input[type="number"] { -moz-appearance: textfield; }
 .exercise-log-header,
 .set-inputs {
   justify-content: center !important;    /* NEW: Center child elements horizontally */
+
+   /* === Perfectly Center Labels and Controls on Exercise Card === */
+
+/* Center the text AND fields (labels and selects/inputs) in every workout card */
+.exercise-log-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;     /* <-- This centers all direct children horizontally */
+  text-align: center;
+}
+
+.exercise-log-header,
+.set-inputs {
+  width: 100%;
+  justify-content: center !important;    /* Center controls horizontally */
+  align-items: center;
+  text-align: center;
+}
+
+/* If Set label is in its own element, this ensures it's centered too */
+.exercise-log-header > *,
+.set-inputs > * {
+  justify-content: center;
+  text-align: center;
+}
+
   text-align: center;
 }
